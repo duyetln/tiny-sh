@@ -12,8 +12,7 @@
    complete the incomplete type declaration in command.h.  */
 
 command_stream_t
-make_command_stream (int (*get_next_byte) (void *),
-		     void *get_next_byte_argument)
+make_command_stream (int (*get_next_byte) (void *), void *get_next_byte_argument)
 {
   /* FIXME: Replace this with your implementation.  You may need to
      add auxiliary functions and otherwise modify the source code.

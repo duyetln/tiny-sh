@@ -1,14 +1,14 @@
 // UCLA CS 111 Lab 1 command internals
 
 enum command_type
-  {
-    AND_COMMAND,         // A && B
-    SEQUENCE_COMMAND,    // A ; B
-    OR_COMMAND,          // A || B
-    PIPE_COMMAND,        // A | B
-    SIMPLE_COMMAND,      // a simple command
-    SUBSHELL_COMMAND,    // ( A )
-  };
+{
+  AND_COMMAND,         // A && B
+  SEQUENCE_COMMAND,    // A ; B
+  OR_COMMAND,          // A || B
+  PIPE_COMMAND,        // A | B
+  SIMPLE_COMMAND,      // a simple command
+  SUBSHELL_COMMAND,    // ( A )
+};
 
 // Data associated with a command.
 struct command
