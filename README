@@ -1,4 +1,24 @@
-This is a skeleton for CS 111 Lab 1.
+Notations for shell syntax:
 
-Replace this README file with notes on your implementation.
-Mentions any special features or limitations.
+CHAR =  "a"|"b"|"c"|"d"|"e"|"f"|"g"|"h"|"i"|"j"|"k"|"l"|"m"|"n"|"o"|"p"|"q"|"r"|"s"|"t"|"u"|"v"|"w"|"x"|"y"|"z"
+       |"A"|"B"|"C"|"D"|"E"|"F"|"G"|"H"|"I"|"J"|"K"|"L"|"M"|"N"|"O"|"P"|"Q"|"R"|"S"|"T"|"U"|"V"|"W"|"X"|"Y"|"Z"
+       |"!"|"%"|"+"|","|"-"|"."|"/"|":"|"@"|"^"|"_"
+       |0|1|2|3|4|5|6|7|8|9|;
+
+WORD = CHAR , { CHAR };
+
+IO_REDIRECTION = "<" , WORD | ">" , WORD;
+
+SIMPLE_COMMAND = WORD , { WORD };
+
+COMMAND = (SIMPLE_COMMAND | SUBSHELL_COMMAND) , { IO_REDIRECTION };
+
+SUBSHELL_COMMAND = "(" , SEQUENCE_COMMAND , ")";
+
+PIPE_COMMAND = COMMAND , { "|" , COMMAND };
+
+AND_COMMAND = COMMAND , "&&" , COMMAND;
+
+OR_COMMAND = AND_COMMAND , "||" , AND_COMMAND;
+
+SEQUENCE_COMMAND = OR_COMMAND , { (";" | "\n") , OR_COMMAND } , [";"];
