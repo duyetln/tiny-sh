@@ -62,7 +62,7 @@ add_token (token_stream_t strm, token_t tkn)
 token_stream_t
 make_token_stream (int (*next_char) (void *), void *file)
 {
-  char c = (*next_char)(file);
+  int c = (*next_char)(file);
 
   token_stream_t strm = malloc_token_stream;
   strm->head = NULL;
@@ -80,20 +80,20 @@ make_token_stream (int (*next_char) (void *), void *file)
         {
           // this should be more than enough, hopefully
           int size = 50;
-          int index = 0;
+          int count = 0;
           char *buffer = (char *) malloc ((sizeof (char)) * size);
           while (iswordchar(c))
             {
-              if (index >= size)
+              if (count >= size)
                 {
                   size *= 2;
                   char *newbuffer = (char *) malloc ((sizeof (char)) * size);
-                  strncpy(newbuffer, buffer, index);
+                  strncpy(newbuffer, buffer, count);
                   free(buffer);
                   buffer = newbuffer;
                 }
 
-              buffer[index++] = c;
+              buffer[count++] = c;
               c = (*next_char)(file);
             }
 
@@ -102,7 +102,7 @@ make_token_stream (int (*next_char) (void *), void *file)
 
           tkn = malloc_token;
           tkn->type = WORD;
-          tkn->value = strndup(buffer, index);
+          tkn->value = strndup(buffer, count);
 
           free(buffer);
         }
@@ -183,8 +183,11 @@ make_token_stream (int (*next_char) (void *), void *file)
           printf("Unrecognized char: %c", c);
         }
 
-      add_token(strm, tkn);
-      tkn = NULL;
+      if (tkn != NULL)
+      {
+        add_token(strm, tkn);
+        tkn = NULL;
+      }
       c = (*next_char)(file);
     }
 
