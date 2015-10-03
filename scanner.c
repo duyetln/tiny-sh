@@ -48,6 +48,7 @@ add_token (token_stream_t strm, token_t tkn)
     {
       strm->head = node;
       strm->tail = node;
+      strm->curr = node;
     }
   else
     {
