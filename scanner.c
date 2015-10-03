@@ -63,6 +63,7 @@ token_stream_t
 make_token_stream (int (*next_char) (void *), void *file)
 {
   int c = (*next_char)(file);
+  int linenum = 1;
 
   token_stream_t strm = malloc_token_stream;
   strm->head = NULL;
@@ -76,7 +77,21 @@ make_token_stream (int (*next_char) (void *), void *file)
       while (isspace(c) && c != '\n')
         c = (*next_char)(file);
 
-      if (iswordchar(c))
+      if (c == '\n')
+        linenum++;
+
+      if (c == '#')
+        {
+          do
+            {
+              c = (*next_char)(file);
+            }
+          while (c != '\n');
+
+          // move backwards 1 char
+          fseek(file, ftell(file) - 1, SEEK_SET);
+        }
+      else if (iswordchar(c))
         {
           // this should be more than enough, hopefully
           int size = 50;
@@ -172,7 +187,7 @@ make_token_stream (int (*next_char) (void *), void *file)
             }
           else
             {
-              printf("Unrecognized char: &");
+              printf("%d: missing &\n", linenum);
 
               // move backwards 1 char
               fseek(file, ftell(file) - 1, SEEK_SET);
@@ -180,14 +195,15 @@ make_token_stream (int (*next_char) (void *), void *file)
         }
       else
         {
-          printf("Unrecognized char: %c", c);
+          printf("%d: unrecognized char: %c\n", linenum, c);
         }
 
       if (tkn != NULL)
-      {
-        add_token(strm, tkn);
-        tkn = NULL;
-      }
+        {
+          add_token(strm, tkn);
+          tkn = NULL;
+        }
+
       c = (*next_char)(file);
     }
 
