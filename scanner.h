@@ -9,7 +9,7 @@ enum token_type
   AND,        // "&&"
   OR,         // "||"
   SEMICOLON,  // ";"
-  NEWLINE,     // "\n"
+  NEWLINE,    // "\n"
 };
 
 struct token

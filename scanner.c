@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "scanner.h"
 
+#define move_backwards(file, count) (fseek(file, ftell(file) - count, SEEK_SET))
 #define malloc_token ((token_t) malloc (sizeof (struct token)))
 #define malloc_token_node ((token_node_t) malloc (sizeof (struct token_node)))
 #define malloc_token_stream ((token_stream_t) malloc (sizeof (struct token_stream)))
@@ -64,7 +65,7 @@ token_stream_t
 make_token_stream (int (*next_char) (void *), void *file)
 {
   int c = (*next_char)(file);
-  int linenum = 1;
+  int line_num = 1;
 
   token_stream_t strm = malloc_token_stream;
   strm->head = NULL;
@@ -79,7 +80,7 @@ make_token_stream (int (*next_char) (void *), void *file)
         c = (*next_char)(file);
 
       if (c == '\n')
-        linenum++;
+        line_num++;
 
       if (c == '#')
         {
@@ -90,7 +91,7 @@ make_token_stream (int (*next_char) (void *), void *file)
           while (c != '\n');
 
           // move backwards 1 char
-          fseek(file, ftell(file) - 1, SEEK_SET);
+          move_backwards(file, 1);
         }
       else if (iswordchar(c))
         {
@@ -114,7 +115,7 @@ make_token_stream (int (*next_char) (void *), void *file)
             }
 
           // move backwards 1 char
-          fseek(file, ftell(file) - 1, SEEK_SET);
+          move_backwards(file, 1);
 
           tkn = malloc_token;
           tkn->type = WORD;
@@ -174,7 +175,7 @@ make_token_stream (int (*next_char) (void *), void *file)
               tkn->value = strdup("|");
 
               // move backwards 1 char
-              fseek(file, ftell(file) - 1, SEEK_SET);
+              move_backwards(file, 1);
             }
         }
       else if (c == '&')
@@ -188,15 +189,15 @@ make_token_stream (int (*next_char) (void *), void *file)
             }
           else
             {
-              printf("%d: missing &\n", linenum);
+              printf("%d: missing &\n", line_num);
 
               // move backwards 1 char
-              fseek(file, ftell(file) - 1, SEEK_SET);
+              move_backwards(file, 1);
             }
         }
       else
         {
-          printf("%d: unrecognized char: %c\n", linenum, c);
+          printf("%d: unrecognized char: %c\n", line_num, c);
         }
 
       if (tkn != NULL)
