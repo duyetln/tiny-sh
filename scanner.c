@@ -15,15 +15,25 @@
 void
 destroy_token_stream(token_stream_t strm)
 {
-  while(strm->tail != NULL)
+  if (strm != NULL)
     {
-      free(strm->tail->value->value);
-      free(strm->tail->value);
-      strm->tail = strm->tail->prev;
-      free(strm->tail->next);
-    }
+      if (strm->head != NULL && strm->tail != NULL)
+        {
+          while(strm->tail != strm->head)
+            {
+              free(strm->tail->value->value);
+              free(strm->tail->value);
+              strm->tail = strm->tail->prev;
+              free(strm->tail->next);
+            }
 
-  free(strm);
+          free(strm->tail->value->value);
+          free(strm->tail->value);
+          free(strm->tail);
+        }
+
+      free(strm);
+    }
 }
 
 token_node_t
@@ -34,17 +44,17 @@ add_token (token_stream_t strm, token_t tkn)
   node->prev = NULL;
   node->next = NULL;
 
-  if (strm->head == NULL || strm->tail == NULL || strm->curr == NULL)
+  if (strm->head == NULL || strm->tail == NULL)
     {
       strm->head = node;
       strm->tail = node;
-      strm->curr = node;
     }
-
-  strm->curr->next = node;
-  node->prev = strm->curr;
-  strm->curr = node;
-  strm->tail = node;
+  else
+    {
+      strm->tail->next = node;
+      node->prev = strm->tail;
+      strm->tail = node;
+    }
 
   return node;
 }
