@@ -1,0 +1,278 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include "scanner.h"
+#include "parser.h"
+
+#define error(a,b,c) printf("error") // method stub
+#define malloc_command ((command_t) malloc (sizeof (struct command)))
+#define malloc_command_node ((command_node_t) malloc (sizeof (struct command_node)))
+#define malloc_command_stream ((command_stream_t) malloc (sizeof (struct command_stream)))
+
+command_t
+parse_command_sequence (token_stream_t strm);
+
+command_t
+create_command(enum command_type t)
+{
+  command_t cmd = malloc_command;
+  cmd->type = t;
+  cmd->status = -1;
+  cmd->input = NULL;
+  cmd->output = NULL;
+
+  return cmd;
+}
+
+void
+assert_token (token_stream_t strm, enum token_type t)
+{
+  if (current_token (strm)->type != t)
+    error (1, 0, "error");
+}
+
+command_t
+parse_simple_command (token_stream_t strm)
+{
+  int c = 0;
+  int i = 0;
+  while (current_token (strm)->type == WORD)
+    {
+      c++;
+      next_token (strm);
+    }
+
+  commant_t cmd = create_command (SIMPLE_COMMAND);
+  cmd->u.word = (char**) malloc (c * sizeof (char *));
+
+  backward_token_stream (strm, c);
+  while (current_token (strm)->type == WORD)
+    {
+      cmd->u.word[i] = strdup (current_token (strm)->value);
+      i++;
+      next_token (strm);
+    }
+
+  return cmd;
+}
+
+command_t
+parse_io_redirection (token_stream_t strm, command_t cmd)
+{
+  token_t n;
+  token_t c;
+  char **w;
+
+  c = current_token (strm);
+  n = next_token (strm);
+  assert_token (strm, WORD);
+
+  if (c->type == INPUT)
+    w = &(cmd->input);
+  else if (c->type == OUTPUT)
+    w = &(cmd->output);
+
+  // handle the case where there are more than <'s or >'s
+  if (*w != NULL)
+    free(*w);
+  *w = strdup (n->value);
+
+  next_token (strm);
+
+  return cmd;
+}
+
+command_t
+parse_subshell_command (token_stream_t strm)
+{
+  assert_token (strm, OPENPAREN);
+  next_token (strm);
+  skip_token (strm, NEWLINE);
+
+  command_t cmd = create_command (SUBSHELL_COMMAND);
+  cmd->u.subshell_command = parse_command_sequence (strm);
+
+  skip_token (strm, NEWLINE);
+  assert_token (strm, CLOSEPAREN);
+  next_token (strm);
+
+  return cmd;
+}
+
+command_t
+parse_command (token_stream_t strm)
+{
+  token_t t;
+  command_t cmd;
+
+  t = current_token (strm);
+  if (t->type == WORD)
+    cmd = parse_simple_command (strm);
+  else if (t->type == OPENPAREN)
+    cmd = parse_subshell_command (strm);
+  else
+    error(1, 0, "error");
+
+  t = current_token (strm);
+  while (t->type == INPUT || t->type == OUTPUT)
+    {
+      parse_io_redirection (strm, cmd);
+      t = current_token (strm);
+    }
+
+  return cmd;
+}
+
+command_t
+parse_pipelines (token_stream_t strm)
+{
+  token_t t;
+  command_t lft;
+  command_t rgt;
+  command_t pipe;
+
+  lft = parse_command (strm);
+  t = current_token (strm);
+
+  while (t->type == PIPE)
+    {
+      next_token (strm);
+      skip_token (strm, NEWLINE);
+
+      pipe = create_command (PIPE_COMMAND);
+      rgt = parse_command(strm);
+      pipe->u.command[0] = lft;
+      pipe->u.command[0] = rgt;
+      lft = pipe;
+
+      t = current_token (strm);
+    }
+
+  return lft;
+}
+
+command_t
+parse_logicals (token_stream_t strm)
+{
+  token_t t;
+  command_t lft;
+  command_t rgt;
+  command_t lgcl;
+
+  lft = parse_pipelines (strm);
+  t = current_token (strm);
+
+  while (t->type == AND || t->type == OR)
+    {
+      next_token (strm);
+      skip_token(strm, NEWLINE);
+      if (t->type == AND)
+        lgcl = create_command (AND_COMMAND);
+      else (t->type == OR)
+        lgcl = create_command (OR_COMMAND);
+
+      rgt = parse_pipelines (strm);
+      lgcl->u.command[0] = lft;
+      lgcl->u.command[0] = rgt;
+      lft = lgcl;
+
+      t = current_token (strm);
+    }
+
+  return lft;
+}
+
+command_t
+parse_command_sequence (token_stream_t strm)
+{
+
+  command_t lft;
+  command_t rgt;
+  command_t seq;
+
+  token_t curr;
+  token_t next1;
+  token_t next2;
+  bool case1;
+  bool case2;
+  bool case3;
+
+  lft = parse_logicals (strm);
+
+  curr = current_token (strm);
+  next1 = peek_token (strm, 1);
+  next2 = peek_token (strm, 2);
+
+  case1 = curr->type == NEWLINE && next1->type != NEWLINE;
+  case2 = curr->type == SEMICOLON && next1->type != NEWLINE;
+  case3 = curr->type == SEMICOLON && next1->type == NEWLINE && next2->type != NEWLINE;
+
+  while (case1 || case2 || case3)
+    {
+      if (case1 || case2)
+        forward_token_stream (strm, 2);
+      else if (case3)
+        forward_token_stream (strm, 3);
+
+      seq = create_command (SEQUENCE_COMMAND);
+      rgt = parse_logicals (strm);
+      seq->u.command[0] = lft;
+      seq->u.command[0] = rgt;
+      lft = seq;
+
+      curr = current_token (strm);
+      next1 = peek_token (strm, 1);
+      next2 = peek_token (strm, 2);
+
+      case1 = curr->type == NEWLINE && next1->type != NEWLINE;
+      case2 = curr->type == SEMICOLON && next1->type != NEWLINE;
+      case3 = curr->type == SEMICOLON && next1->type == NEWLINE && next2->type != NEWLINE;
+    }
+
+  return lft;
+}
+
+
+command_stream_t
+parse (token_stream_t strm)
+{
+  command_stream_t cmd_strm = malloc_command_stream
+  cmd_strm->head = NULL;
+  cmd_strm->tail = NULL;
+  cmd_strm->curr = NULL;
+
+  while (current_token (strm) != NULL)
+    {
+      skip_token(strm, NEWLINE);
+
+      if (current_token (strm) != NULL)
+        {
+          command_node_t node = malloc_command_node;
+          node->value = parse_command_sequence (strm);
+          node->prev = NULL;
+          node->next = NULL;
+
+          if (cmd_strm->head == NULL || cmd_strm->tail == NULL)
+            {
+              cmd_strm->head = node;
+              cmd_strm->tail = node;
+              cmd_strm->curr = node;
+            }
+          else
+            {
+              cmd_strm->tail->next = node;
+              node->prev = cmd_strm->tail;
+              cmd_strm->tail = node;
+            }
+        }
+    }
+
+  return cmd_strm;
+}
+
+command_stream_t
+create_command_stream (int (*next_char) (void *), void *file)
+{
+  return parse (create_token_stream (next_char, file));
+}
