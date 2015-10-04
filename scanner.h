@@ -40,4 +40,22 @@ token_stream_t
 make_token_stream (int (*get_next_byte) (void *), void *get_next_byte_argument);
 
 void
-destroy_token_stream(token_stream_t strm);
+destroy_token_stream (token_stream_t strm);
+
+token_t
+read_token (token_stream_t strm);
+
+token_t
+peek_token (token_stream_t strm, int c);
+
+token_t
+reset_token_stream (token_stream_t strm);
+
+token_t
+forward_token_stream (token_stream_t strm, int c);
+
+token_t
+backward_token_stream (token_stream_t strm, int c);
+
+token_t
+skip_token (token_stream_t strm, enum token_type t);
