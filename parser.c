@@ -265,5 +265,8 @@ parse (token_stream_t strm)
 command_stream_t
 create_command_stream (int (*next_char) (void *), void *file)
 {
-  return parse (create_token_stream (next_char, file));
+  token_stream_t tkn_strm = create_token_stream (next_char, file);
+  command_stream_t cmd_strm = parse (tkn_strm);
+  destroy_token_stream (tkn_strm);
+  return cmd_strm;
 }
