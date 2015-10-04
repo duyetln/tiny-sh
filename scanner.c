@@ -14,11 +14,9 @@
   c == '@' || c == '^' || c == '_')
 
 token_t
-read_token (token_stream_t strm)
+next_token (token_stream_t strm)
 {
-  token_t t = current_token (strm);
-  forward_token_stream (strm, 1);
-  return t;
+  return forward_token_stream (strm, 1);
 }
 
 token_t

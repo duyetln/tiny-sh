@@ -43,7 +43,7 @@ void
 destroy_token_stream (token_stream_t strm);
 
 token_t
-read_token (token_stream_t strm);
+next_token (token_stream_t strm);
 
 token_t
 current_token (token_stream_t strm);
