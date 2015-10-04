@@ -21,4 +21,4 @@ LOGICALS = PIPELINES , { ("&&" | "||") , { "\n" } , PIPELINES };
 
 COMMAND_SEQUENCE = LOGICALS , { (";" | "\n" | ( ";" , "\n" ) ) , [ LOGICALS ] };
 
-COMPUTATION = COMMAND_SEQUENCE , { { "\n" } , [ COMMAND_SEQUENCE ] };
+COMPUTATION = { { "\n" } , [ COMMAND_SEQUENCE ] };
