@@ -50,7 +50,7 @@ parse_simple_command (token_stream_t strm)
       next_token (strm);
     }
 
-  commant_t cmd = create_command (SIMPLE_COMMAND);
+  command_t cmd = create_command (SIMPLE_COMMAND);
   cmd->u.word = (char**) malloc (c * sizeof (char *));
 
   backward_token_stream (strm, c);
@@ -67,9 +67,9 @@ parse_simple_command (token_stream_t strm)
 command_t
 parse_io_redirection (token_stream_t strm, command_t cmd)
 {
-  char **w;
   token_t c = current_token (strm);
   token_t n = next_token (strm);
+  char **w = NULL;
 
   assert_token (strm, WORD);
 
@@ -205,9 +205,9 @@ parse_command_sequence (token_stream_t strm)
     sep_case2 (curr, next1) ||
     sep_case3 (curr, next1, next2))
     {
-      if (case1 || case2)
+      if (sep_case1 (curr, next1) || sep_case2 (curr, next1))
         forward_token_stream (strm, 2);
-      else if (case3)
+      else if (sep_case3 (curr, next1, next2))
         forward_token_stream (strm, 3);
 
       seq = create_command (SEQUENCE_COMMAND);
@@ -228,7 +228,7 @@ parse_command_sequence (token_stream_t strm)
 command_stream_t
 parse (token_stream_t strm)
 {
-  command_stream_t cmd_strm = malloc_command_stream
+  command_stream_t cmd_strm = malloc_command_stream;
   cmd_strm->head = NULL;
   cmd_strm->tail = NULL;
   cmd_strm->curr = NULL;
