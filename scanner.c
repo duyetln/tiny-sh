@@ -16,9 +16,15 @@
 token_t
 read_token (token_stream_t strm)
 {
-  token_t t = peek_token(strm, 0);
-  forward_token_stream(strm, 1);
+  token_t t = current_token (strm);
+  forward_token_stream (strm, 1);
   return t;
+}
+
+token_t
+current_token (token_stream_t strm)
+{
+  return peek_token (strm, 0);
 }
 
 token_t

@@ -46,6 +46,9 @@ token_t
 read_token (token_stream_t strm);
 
 token_t
+current_token (token_stream_t strm);
+
+token_t
 peek_token (token_stream_t strm, int c);
 
 token_t
