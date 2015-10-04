@@ -115,7 +115,7 @@ add_token (token_stream_t strm, token_t tkn)
 }
 
 token_stream_t
-make_token_stream (int (*next_char) (void *), void *file)
+create_token_stream (int (*next_char) (void *), void *file)
 {
   int c = (*next_char)(file);
   int line_num = 1;

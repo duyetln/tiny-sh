@@ -37,7 +37,7 @@ typedef struct token_node *token_node_t;
 typedef struct token_stream *token_stream_t;
 
 token_stream_t
-make_token_stream (int (*get_next_byte) (void *), void *get_next_byte_argument);
+create_token_stream (int (*next_char) (void *), void *file);
 
 void
 destroy_token_stream (token_stream_t strm);
