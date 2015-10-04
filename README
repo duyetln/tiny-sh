@@ -13,10 +13,12 @@ SIMPLE_COMMAND = WORD , { WORD };
 
 COMMAND = (SIMPLE_COMMAND | SUBSHELL_COMMAND) , { IO_REDIRECTION };
 
-SUBSHELL_COMMAND = "(" , SEQUENCE_COMMAND , ")";
+SUBSHELL_COMMAND = "(" , { "\n" }, COMMAND_SEQUENCE , { "\n" } ")";
 
-PIPES = COMMAND , { "|" , COMMAND };
+PIPELINES = COMMAND , { "|" , { "\n" } , COMMAND };
 
-LOGICALS = PIPES , { ("&&" | "||") , PIPES };
+LOGICALS = PIPELINES , { ("&&" | "||") , { "\n" } , PIPELINES };
 
-SEQUENCE_COMMAND = LOGICALS , { (";" | "\n") , LOGICALS } , [";"];
+COMMAND_SEQUENCE = LOGICALS , { (";" | "\n" | ( ";" , "\n" ) ) , [ LOGICALS ] };
+
+COMPUTATION = COMMAND_SEQUENCE , { { "\n" } , [ COMMAND_SEQUENCE ] };
