@@ -29,6 +29,16 @@ create_command(enum command_type t)
   cmd->input = NULL;
   cmd->output = NULL;
 
+  if (t == SIMPLE_COMMAND)
+    cmd->u.word = NULL;
+  else if (t == SUBSHELL_COMMAND)
+    cmd->u.subshell_command = NULL;
+  else // the remaining command types
+    {
+      cmd->u.command[0] = NULL;
+      cmd->u.command[1] = NULL;
+    }
+
   return cmd;
 }
 
@@ -42,6 +52,7 @@ assert_token (token_stream_t strm, enum token_type t)
 command_t
 parse_simple_command (token_stream_t strm)
 {
+  printf("parse simple command\n");
   int c = 0;
   int i = 0;
   while (current_token (strm)->type == WORD)
@@ -51,7 +62,7 @@ parse_simple_command (token_stream_t strm)
     }
 
   command_t cmd = create_command (SIMPLE_COMMAND);
-  cmd->u.word = (char**) malloc (c * sizeof (char *));
+  cmd->u.word = (char**) malloc ((c + 1) * sizeof (char *));
 
   backward_token_stream (strm, c);
   while (current_token (strm)->type == WORD)
@@ -60,6 +71,7 @@ parse_simple_command (token_stream_t strm)
       i++;
       next_token (strm);
     }
+  cmd->u.word[i] = NULL;
 
   return cmd;
 }
@@ -67,6 +79,7 @@ parse_simple_command (token_stream_t strm)
 command_t
 parse_io_redirection (token_stream_t strm, command_t cmd)
 {
+  printf("parse io redirection\n");
   token_t c = current_token (strm);
   token_t n = next_token (strm);
   char **w = NULL;
@@ -91,6 +104,7 @@ parse_io_redirection (token_stream_t strm, command_t cmd)
 command_t
 parse_subshell_command (token_stream_t strm)
 {
+  printf("parse subshell command\n");
   assert_token (strm, OPENPAREN);
   next_token (strm);
   skip_token (strm, NEWLINE);
@@ -108,6 +122,7 @@ parse_subshell_command (token_stream_t strm)
 command_t
 parse_command (token_stream_t strm)
 {
+  printf("parse command\n");
   command_t cmd;
   token_t t = current_token (strm);
 
@@ -131,6 +146,7 @@ parse_command (token_stream_t strm)
 command_t
 parse_pipelines (token_stream_t strm)
 {
+  printf("parse pipelines\n");
   token_t t;
   command_t lft;
   command_t rgt;
@@ -147,7 +163,7 @@ parse_pipelines (token_stream_t strm)
       pipe = create_command (PIPE_COMMAND);
       rgt = parse_command (strm);
       pipe->u.command[0] = lft;
-      pipe->u.command[0] = rgt;
+      pipe->u.command[1] = rgt;
       lft = pipe;
 
       t = current_token (strm);
@@ -159,6 +175,7 @@ parse_pipelines (token_stream_t strm)
 command_t
 parse_logicals (token_stream_t strm)
 {
+  printf("parse logicals\n");
   token_t t;
   command_t lft;
   command_t rgt;
@@ -179,7 +196,7 @@ parse_logicals (token_stream_t strm)
 
       rgt = parse_pipelines (strm);
       lgcl->u.command[0] = lft;
-      lgcl->u.command[0] = rgt;
+      lgcl->u.command[1] = rgt;
       lft = lgcl;
 
       t = current_token (strm);
@@ -191,6 +208,7 @@ parse_logicals (token_stream_t strm)
 command_t
 parse_command_sequence (token_stream_t strm)
 {
+  printf("parse command sequence\n");
   command_t lft;
   command_t rgt;
   command_t seq;
@@ -213,7 +231,7 @@ parse_command_sequence (token_stream_t strm)
       seq = create_command (SEQUENCE_COMMAND);
       rgt = parse_logicals (strm);
       seq->u.command[0] = lft;
-      seq->u.command[0] = rgt;
+      seq->u.command[1] = rgt;
       lft = seq;
 
       curr = current_token (strm);
@@ -228,6 +246,7 @@ parse_command_sequence (token_stream_t strm)
 command_stream_t
 parse (token_stream_t strm)
 {
+  printf("parse\n");
   command_stream_t cmd_strm = malloc_command_stream;
   cmd_strm->head = NULL;
   cmd_strm->tail = NULL;

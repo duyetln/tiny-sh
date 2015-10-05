@@ -32,17 +32,14 @@ peek_token (token_stream_t strm, int c)
   while (c-- > 0 && n != NULL)
     n = n->next;
 
-  if (n != NULL)
-    return n->value;
-  else
-    return NULL;
+  return ((n != NULL) ? n->value : NULL);
 }
 
 token_t
 reset_token_stream (token_stream_t strm)
 {
   strm->curr = strm->head;
-  return strm->curr->value;
+  return current_token (strm);
 }
 
 token_t
@@ -50,7 +47,7 @@ forward_token_stream (token_stream_t strm, int c)
 {
   while (c-- > 0 && strm->curr != NULL)
     strm->curr = strm->curr->next;
-  return strm->curr->value;
+  return current_token (strm);
 }
 
 token_t
@@ -58,7 +55,7 @@ backward_token_stream (token_stream_t strm, int c)
 {
   while (c-- > 0 && strm->curr != NULL)
     strm->curr = strm->curr->prev;
-  return strm->curr->value;
+  return current_token (strm);
 }
 
 token_t
@@ -66,7 +63,7 @@ skip_token (token_stream_t strm, enum token_type t)
 {
   while (strm->curr != NULL && strm->curr->value->type == t)
     strm->curr = strm->curr->next;
-  return strm->curr->value;
+  return current_token (strm);
 }
 
 
