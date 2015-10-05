@@ -5,15 +5,25 @@
 #include "scanner.h"
 #include "parser.h"
 
-#define error(a,b,c) printf("error") // method stub
+#define error(a,b,c) printf("error\n") // method stub
 #define malloc_command ((command_t) malloc (sizeof (struct command)))
 #define malloc_command_node ((command_node_t) malloc (sizeof (struct command_node)))
 #define malloc_command_stream ((command_stream_t) malloc (sizeof (struct command_stream)))
 
 // used in parse_command_sequence to detect seperator patterns
-#define sep_case1(curr, next1) ((curr)->type == NEWLINE && (next1)->type != NEWLINE)
-#define sep_case2(curr, next1) ((curr)->type == SEMICOLON && (next1)->type != NEWLINE)
-#define sep_case3(curr, next1, next2) ((curr)->type == SEMICOLON && \
+#define not_null(ptr) ((ptr) != NULL)
+#define sep_case1(curr, next1) (not_null(curr) && \
+  not_null(next1) && \
+  (curr)->type == NEWLINE && \
+  (next1)->type != NEWLINE)
+#define sep_case2(curr, next1) (not_null(curr) && \
+  not_null(next1) && \
+  (curr)->type == SEMICOLON && \
+  (next1)->type != NEWLINE)
+#define sep_case3(curr, next1, next2) (not_null(curr) && \
+  not_null(next1) && \
+  not_null(next2) && \
+  (curr)->type == SEMICOLON && \
   (next1)->type == NEWLINE && \
   (next2)->type != NEWLINE)
 
@@ -93,7 +103,7 @@ parse_io_redirection (token_stream_t strm, command_t cmd)
 
   // handle the case where there are more than <'s or >'s
   if (*w != NULL)
-    free(*w);
+    free (*w);
   *w = strdup (n->value);
 
   next_token (strm);
@@ -131,7 +141,7 @@ parse_command (token_stream_t strm)
   else if (t->type == OPENPAREN)
     cmd = parse_subshell_command (strm);
   else
-    error(1, 0, "error");
+    error (1, 0, "error");
 
   t = current_token (strm);
   while (t->type == INPUT || t->type == OUTPUT)
@@ -187,7 +197,7 @@ parse_logicals (token_stream_t strm)
   while (t->type == AND || t->type == OR)
     {
       next_token (strm);
-      skip_token(strm, NEWLINE);
+      skip_token (strm, NEWLINE);
 
       if (t->type == AND)
         lgcl = create_command (AND_COMMAND);
@@ -213,20 +223,20 @@ parse_command_sequence (token_stream_t strm)
   command_t rgt;
   command_t seq;
 
+  lft = parse_logicals (strm);
+
   token_t curr = current_token (strm);
   token_t next1 = peek_token (strm, 1);
   token_t next2 = peek_token (strm, 2);
-
-  lft = parse_logicals (strm);
 
   while (sep_case1 (curr, next1) ||
     sep_case2 (curr, next1) ||
     sep_case3 (curr, next1, next2))
     {
       if (sep_case1 (curr, next1) || sep_case2 (curr, next1))
-        forward_token_stream (strm, 2);
+        forward_token_stream (strm, 1);
       else if (sep_case3 (curr, next1, next2))
-        forward_token_stream (strm, 3);
+        forward_token_stream (strm, 2);
 
       seq = create_command (SEQUENCE_COMMAND);
       rgt = parse_logicals (strm);
@@ -238,6 +248,9 @@ parse_command_sequence (token_stream_t strm)
       next1 = peek_token (strm, 1);
       next2 = peek_token (strm, 2);
     }
+
+  if (not_null (curr) && curr->type == SEMICOLON)
+    next_token (strm);
 
   return lft;
 }
@@ -254,7 +267,7 @@ parse (token_stream_t strm)
 
   while (current_token (strm) != NULL)
     {
-      skip_token(strm, NEWLINE);
+      skip_token (strm, NEWLINE);
 
       if (current_token (strm) != NULL)
         {
