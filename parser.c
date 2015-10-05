@@ -265,11 +265,11 @@ parse (token_stream_t strm)
   cmd_strm->tail = NULL;
   cmd_strm->curr = NULL;
 
-  while (current_token (strm) != NULL)
+  while (current_token (strm)->type != ETKN)
     {
       skip_token (strm, NEWLINE);
 
-      if (current_token (strm) != NULL)
+      if (current_token (strm)->type != ETKN)
         {
           command_node_t node = malloc_command_node;
           node->value = parse_command_sequence (strm);

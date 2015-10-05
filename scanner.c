@@ -258,5 +258,12 @@ create_token_stream (int (*next_char) (void *), void *file)
       c = (*next_char)(file);
     }
 
+  tkn = malloc_token;
+  tkn->type = ETKN;
+  tkn->value = strdup ("EOF");
+
+  add_token (strm, tkn);
+  tkn = NULL;
+
   return strm;
 }
