@@ -253,13 +253,13 @@ create_token_stream (int (*next_char) (void *), void *file)
             }
           else
             {
-              printf("%d: missing &\n", strm->total_lines);
+              printf("%d: unrecognized token &\n", strm->total_lines);
               move_backwards (c, file, 1);
             }
         }
       else
         {
-          printf("%d: unrecognized char: %c\n", strm->total_lines, c);
+          printf("%d: unrecognized token %c\n", strm->total_lines, c);
         }
 
       if (tkn != NULL)
