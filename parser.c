@@ -10,8 +10,8 @@
 #define malloc_command_node ((command_node_t) malloc (sizeof (struct command_node)))
 #define malloc_command_stream ((command_stream_t) malloc (sizeof (struct command_stream)))
 
-// used in parse_command_sequence to detect seperator patterns
 #define not_null(ptr) ((ptr) != NULL)
+// used in parse_command_sequence to detect seperator patterns
 #define sep_case1(curr, next1) (not_null(curr) && \
   not_null(next1) && \
   (curr)->type == NEWLINE && \

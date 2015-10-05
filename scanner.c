@@ -4,7 +4,8 @@
 #include <ctype.h>
 #include "scanner.h"
 
-#define move_backwards(file, count) (fseek(file, ftell(file) - count, SEEK_SET))
+// move backwars unless EOF
+#define move_backwards(c, file, count) ((c) != EOF && fseek(file, ftell(file) - (count), SEEK_SET))
 #define malloc_token ((token_t) malloc (sizeof (struct token)))
 #define malloc_token_node ((token_node_t) malloc (sizeof (struct token_node)))
 #define malloc_token_stream ((token_stream_t) malloc (sizeof (struct token_stream)))
@@ -74,20 +75,20 @@ destroy_token_stream (token_stream_t strm)
     {
       if (strm->head != NULL && strm->tail != NULL)
         {
-          while(strm->tail != strm->head)
+          while (strm->tail != strm->head)
             {
-              free(strm->tail->value->value);
-              free(strm->tail->value);
+              free (strm->tail->value->value);
+              free (strm->tail->value);
               strm->tail = strm->tail->prev;
-              free(strm->tail->next);
+              free (strm->tail->next);
             }
 
-          free(strm->tail->value->value);
-          free(strm->tail->value);
-          free(strm->tail);
+          free (strm->tail->value->value);
+          free (strm->tail->value);
+          free (strm->tail);
         }
 
-      free(strm);
+      free (strm);
     }
 }
 
@@ -130,7 +131,7 @@ create_token_stream (int (*next_char) (void *), void *file)
 
   while (c != EOF)
     {
-      while (isspace(c) && c != '\n')
+      while (isspace (c) && c != '\n')
         c = (*next_char)(file);
 
       if (c == '\n')
@@ -143,24 +144,22 @@ create_token_stream (int (*next_char) (void *), void *file)
               c = (*next_char)(file);
             }
           while (c != '\n');
-
-          // move backwards 1 char
-          move_backwards(file, 1);
+          move_backwards (c, file, 1);
         }
-      else if (iswordchar(c))
+      else if (iswordchar (c))
         {
           // this should be more than enough, hopefully
           int size = 50;
           int count = 0;
           char *buffer = (char *) malloc ((sizeof (char)) * size);
-          while (iswordchar(c))
+          while (iswordchar (c))
             {
               if (count >= size)
                 {
                   size *= 2;
                   char *newbuffer = (char *) malloc ((sizeof (char)) * size);
-                  strncpy(newbuffer, buffer, count);
-                  free(buffer);
+                  strncpy (newbuffer, buffer, count);
+                  free (buffer);
                   buffer = newbuffer;
                 }
 
@@ -168,50 +167,49 @@ create_token_stream (int (*next_char) (void *), void *file)
               c = (*next_char)(file);
             }
 
-          // move backwards 1 char
-          move_backwards(file, 1);
+          move_backwards (c, file, 1);
 
           tkn = malloc_token;
           tkn->type = WORD;
-          tkn->value = strndup(buffer, count);
+          tkn->value = strndup (buffer, count);
 
-          free(buffer);
+          free (buffer);
         }
       else if (c == '<')
         {
           tkn = malloc_token;
           tkn->type = INPUT;
-          tkn->value = strdup("<");
+          tkn->value = strdup ("<");
         }
       else if (c == '>')
         {
           tkn = malloc_token;
           tkn->type = OUTPUT;
-          tkn->value = strdup(">");
+          tkn->value = strdup (">");
         }
       else if (c == '(')
         {
           tkn = malloc_token;
           tkn->type = OPENPAREN;
-          tkn->value = strdup("(");
+          tkn->value = strdup ("(");
         }
       else if (c == ')')
         {
           tkn = malloc_token;
           tkn->type = CLOSEPAREN;
-          tkn->value = strdup(")");
+          tkn->value = strdup (")");
         }
       else if (c == ';')
         {
           tkn = malloc_token;
           tkn->type = SEMICOLON;
-          tkn->value = strdup(";");
+          tkn->value = strdup (";");
         }
       else if (c == '\n')
         {
           tkn = malloc_token;
           tkn->type = NEWLINE;
-          tkn->value = strdup("\n");
+          tkn->value = strdup ("\n");
         }
       else if (c == '|')
         {
@@ -220,16 +218,15 @@ create_token_stream (int (*next_char) (void *), void *file)
             {
               tkn = malloc_token;
               tkn->type = OR;
-              tkn->value = strdup("||");
+              tkn->value = strdup ("||");
             }
           else
             {
               tkn = malloc_token;
               tkn->type = PIPE;
-              tkn->value = strdup("|");
+              tkn->value = strdup ("|");
 
-              // move backwards 1 char
-              move_backwards(file, 1);
+              move_backwards (c, file, 1);
             }
         }
       else if (c == '&')
@@ -239,14 +236,12 @@ create_token_stream (int (*next_char) (void *), void *file)
             {
               tkn = malloc_token;
               tkn->type = AND;
-              tkn->value = strdup("&&");
+              tkn->value = strdup ("&&");
             }
           else
             {
               printf("%d: missing &\n", line_num);
-
-              // move backwards 1 char
-              move_backwards(file, 1);
+              move_backwards (c, file, 1);
             }
         }
       else
@@ -256,7 +251,7 @@ create_token_stream (int (*next_char) (void *), void *file)
 
       if (tkn != NULL)
         {
-          add_token(strm, tkn);
+          add_token (strm, tkn);
           tkn = NULL;
         }
 
