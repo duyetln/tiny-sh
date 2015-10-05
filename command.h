@@ -1,6 +1,7 @@
 // UCLA CS 111 Lab 1 command interface
 
 typedef struct command *command_t;
+typedef struct command_node *command_node_t;
 typedef struct command_stream *command_stream_t;
 
 /* Create a command stream from LABEL, GETBYTE, and ARG.  A reader of
