@@ -255,6 +255,29 @@ parse_command_sequence (token_stream_t strm)
   return lft;
 }
 
+command_node_t
+add_command (command_stream_t strm, command_t cmd)
+{
+  command_node_t node = malloc_command_node;
+  node->value = cmd;
+  node->prev = NULL;
+  node->next = NULL;
+
+  if (strm->head == NULL || strm->tail == NULL)
+    {
+      strm->head = node;
+      strm->tail = node;
+      strm->curr = node;
+    }
+  else
+    {
+      strm->tail->next = node;
+      node->prev = strm->tail;
+      strm->tail = node;
+    }
+
+  return node;
+}
 
 command_stream_t
 parse (token_stream_t strm)
@@ -271,23 +294,7 @@ parse (token_stream_t strm)
 
       if (current_token (strm)->type != ETKN)
         {
-          command_node_t node = malloc_command_node;
-          node->value = parse_command_sequence (strm);
-          node->prev = NULL;
-          node->next = NULL;
-
-          if (cmd_strm->head == NULL || cmd_strm->tail == NULL)
-            {
-              cmd_strm->head = node;
-              cmd_strm->tail = node;
-              cmd_strm->curr = node;
-            }
-          else
-            {
-              cmd_strm->tail->next = node;
-              node->prev = cmd_strm->tail;
-              cmd_strm->tail = node;
-            }
+          add_command (cmd_strm, parse_command_sequence (strm));
         }
     }
 
