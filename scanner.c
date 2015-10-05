@@ -5,6 +5,8 @@
 #include "scanner.h"
 
 // move backwars unless EOF
+#define incr_line(strm) (((strm)->curr != NULL && (strm)->curr->value->type == NEWLINE) && (strm)->line++)
+#define decr_line(strm) (((strm)->curr != NULL && (strm)->curr->value->type == NEWLINE) && (strm)->line--)
 #define move_backwards(c, file, count) ((c) != EOF && fseek(file, ftell(file) - (count), SEEK_SET))
 #define malloc_token ((token_t) malloc (sizeof (struct token)))
 #define malloc_token_node ((token_node_t) malloc (sizeof (struct token_node)))
@@ -40,6 +42,7 @@ token_t
 reset_token_stream (token_stream_t strm)
 {
   strm->curr = strm->head;
+  strm->line = 1;
   return current_token (strm);
 }
 
@@ -47,7 +50,10 @@ token_t
 forward_token_stream (token_stream_t strm, int c)
 {
   while (c-- > 0 && strm->curr != NULL)
+  {
+    incr_line (strm);
     strm->curr = strm->curr->next;
+  }
   return current_token (strm);
 }
 
@@ -55,7 +61,10 @@ token_t
 backward_token_stream (token_stream_t strm, int c)
 {
   while (c-- > 0 && strm->curr != NULL)
+  {
     strm->curr = strm->curr->prev;
+    decr_line (strm);
+  }
   return current_token (strm);
 }
 
@@ -63,7 +72,10 @@ token_t
 skip_token (token_stream_t strm, enum token_type t)
 {
   while (strm->curr != NULL && strm->curr->value->type == t)
+  {
+    incr_line (strm);
     strm->curr = strm->curr->next;
+  }
   return current_token (strm);
 }
 
@@ -120,12 +132,13 @@ token_stream_t
 create_token_stream (int (*next_char) (void *), void *file)
 {
   int c = (*next_char)(file);
-  int line_num = 1;
 
   token_stream_t strm = malloc_token_stream;
   strm->head = NULL;
   strm->tail = NULL;
   strm->curr = NULL;
+  strm->total_lines = 1;
+  strm->line = 1;
 
   token_t tkn = NULL;
 
@@ -135,7 +148,7 @@ create_token_stream (int (*next_char) (void *), void *file)
         c = (*next_char)(file);
 
       if (c == '\n')
-        line_num++;
+        strm->total_lines++;
 
       if (c == '#')
         {
@@ -240,13 +253,13 @@ create_token_stream (int (*next_char) (void *), void *file)
             }
           else
             {
-              printf("%d: missing &\n", line_num);
+              printf("%d: missing &\n", strm->total_lines);
               move_backwards (c, file, 1);
             }
         }
       else
         {
-          printf("%d: unrecognized char: %c\n", line_num, c);
+          printf("%d: unrecognized char: %c\n", strm->total_lines, c);
         }
 
       if (tkn != NULL)

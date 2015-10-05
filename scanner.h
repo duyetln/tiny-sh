@@ -31,6 +31,8 @@ struct token_stream
   struct token_node *head;
   struct token_node *tail;
   struct token_node *curr;
+  int total_lines;
+  int line;
 };
 
 typedef struct token *token_t;
