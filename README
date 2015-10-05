@@ -19,6 +19,6 @@ PIPELINES = COMMAND , { "|" , { "\n" } , COMMAND };
 
 LOGICALS = PIPELINES , { ("&&" | "||") , { "\n" } , PIPELINES };
 
-COMMAND_SEQUENCE = LOGICALS , { (";" | "\n" | ( ";" , "\n" ) ) , [ LOGICALS ] };
+COMMAND_SEQUENCE = LOGICALS , { (";" | "\n" | ( ";" , "\n" ) ) , [ LOGICALS ] }, [ ";" ];
 
 COMPUTATION = { { "\n" } , [ COMMAND_SEQUENCE ] };
