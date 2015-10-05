@@ -309,3 +309,67 @@ create_command_stream (int (*next_char) (void *), void *file)
   destroy_token_stream (tkn_strm);
   return cmd_strm;
 }
+
+void
+destroy_command (command_t cmd)
+{
+  switch (cmd->type)
+    {
+      case AND_COMMAND:
+      case SEQUENCE_COMMAND:
+      case OR_COMMAND:
+      case PIPE_COMMAND:
+        {
+          destroy_command (cmd->u.command[0]);
+          destroy_command (cmd->u.command[1]);
+          break;
+        }
+
+      case SIMPLE_COMMAND:
+        {
+          char **w = cmd->u.word;
+          while (*w != NULL)
+            {
+              free (*w);
+              w++;
+            }
+          free (cmd->u.word);
+          break;
+        }
+
+      case SUBSHELL_COMMAND:
+        {
+          destroy_command (cmd->u.subshell_command);
+          break;
+        }
+    }
+
+  if (cmd->input != NULL)
+    free (cmd->input);
+  if (cmd->output != NULL)
+    free (cmd->output);
+
+  free (cmd);
+}
+
+void
+destroy_command_stream (command_stream_t strm)
+{
+  if (strm != NULL)
+    {
+      if (strm->head != NULL && strm->tail != NULL)
+        {
+          while (strm->tail != strm->head)
+            {
+              destroy_command (strm->tail->value);
+              strm->tail = strm->tail->prev;
+              free (strm->tail->next);
+            }
+
+          destroy_command (strm->tail->value);
+          free (strm->tail);
+        }
+
+      free (strm);
+    }
+}
