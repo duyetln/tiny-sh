@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <error.h>
+
 #include "scanner.h"
 
 // move backwars unless EOF
@@ -253,13 +255,13 @@ create_token_stream (int (*next_char) (void *), void *file)
             }
           else
             {
-              printf("%d: unrecognized token &\n", strm->total_lines);
+              error (1, 0, "%d: unrecognized token &\n", strm->total_lines);
               move_backwards (c, file, 1);
             }
         }
       else
         {
-          printf("%d: unrecognized token %c\n", strm->total_lines, c);
+          error (1, 0, "%d: unrecognized token %c\n", strm->total_lines, c);
         }
 
       if (tkn != NULL)

@@ -2,10 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+
+#include <error.h>
+
+#include "command.h"
 #include "scanner.h"
 #include "parser.h"
 
-#define error(a,b,c) (printf("%s\n", (c)))// method stub
 #define malloc_command ((command_t) malloc (sizeof (struct command)))
 #define malloc_command_node ((command_node_t) malloc (sizeof (struct command_node)))
 #define malloc_command_stream ((command_stream_t) malloc (sizeof (struct command_stream)))
@@ -58,7 +61,6 @@ assert_token (token_stream_t strm, enum token_type t)
   if (current_token (strm)->type != t)
     {
       char *tw;
-      char buffer[50];
       switch (t)
         {
           case WORD: tw = "WORD"; break;
@@ -74,8 +76,7 @@ assert_token (token_stream_t strm, enum token_type t)
           case ETKN: tw = "EOF"; break;
         }
 
-      sprintf (buffer, "%d: expecting a %s token\n", strm->line, tw);
-      error (1, 0, buffer);
+      error (1, 0, "%d: expecting a %s token\n", strm->line, tw);
     }
 }
 
@@ -161,11 +162,7 @@ parse_command (token_stream_t strm)
   else if (t->type == OPENPAREN)
     cmd = parse_subshell_command (strm);
   else
-    {
-      char buffer[50];
-      sprintf (buffer, "%d: expecting a WORD or OPENPAREN token\n", strm->line);
-      error (1, 0, buffer);
-    }
+    error (1, 0, "%d: expecting a WORD or OPENPAREN token\n", strm->line);
 
   t = current_token (strm);
   while (t->type == INPUT || t->type == OUTPUT)
@@ -396,4 +393,16 @@ destroy_command_stream (command_stream_t strm)
 
       free (strm);
     }
+}
+
+command_t next_command (command_stream_t strm)
+{
+  if (strm->curr != NULL)
+    {
+      command_t cmd = strm->curr->value;
+      strm->curr = strm->curr->next;
+      return cmd;
+    }
+  else
+    return NULL;
 }
