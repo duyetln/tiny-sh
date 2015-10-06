@@ -22,3 +22,12 @@ LOGICALS = PIPELINES , { ("&&" | "||") , { "\n" } , PIPELINES };
 COMMAND_SEQUENCE = LOGICALS , { (";" | "\n" | ( ";" , "\n" ) ) , [ LOGICALS ] }, [ ";" ];
 
 COMPUTATION = { { "\n" } , [ COMMAND_SEQUENCE ] };
+
+I wrote down the syntax for the shell as above before implementing the parser so that:
+_ I can have a clear understanding of what is expected from the syntax, such as operator precedence or expected tokens. For example, since PIPELINES is parsed before LOGICALS, this makes clear that "|" has higher precedence that "&&" or "||".
+_ I can validate and make sure the syntax covers most common cases.
+_ I can change the syntax easily to cover unexpected edge cases. In such case, changing the parser is also easy because its implementation mirrors the syntax.
+
+I haven't found a decent solution to represent the syntax for linebreaks, semicolons, and COMMAND_SEQUENCE. As the result, the logic for parsing COMMAND_SEQUENCE is a bit clunky (need 3 tokens lookup ahead) and could fail to reject a few syntactically invalid edge cases.
+
+My implementation includes 2 things: a scanner and a parser. The scanner reads the file and produces a stream of tokens. The parser reads this stream and builds the command stream based on the syntax above.
