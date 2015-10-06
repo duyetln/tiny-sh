@@ -10,7 +10,6 @@ enum token_type
   OR,         // "||"
   SEMICOLON,  // ";"
   NEWLINE,    // "\n"
-  ETKN,       // "End Token", aka EOF
 };
 
 struct token
