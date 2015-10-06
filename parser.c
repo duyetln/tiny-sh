@@ -73,6 +73,7 @@ assert_token (token_stream_t strm, enum token_type t)
           case OR: tw = "OR"; break;
           case SEMICOLON: tw = "SEMICOLON"; break;
           case NEWLINE: tw = "NEWLINE"; break;
+          case ETKN: tw = "EOF"; break;
         }
 
       error (1, 0, "%d: expecting a %s token\n", strm->line, tw);
@@ -258,7 +259,7 @@ parse_command_sequence (token_stream_t strm)
       else if (sep_case3 (curr, next1, next2))
         forward_token_stream (strm, 2);
 
-      if (current_token (strm) != NULL)
+      if (current_token (strm)->type != ETKN)
         {
           seq = create_command (SEQUENCE_COMMAND);
           rgt = parse_logicals (strm);
@@ -311,11 +312,11 @@ parse (token_stream_t strm)
   cmd_strm->tail = NULL;
   cmd_strm->curr = NULL;
 
-  while (current_token (strm) != NULL)
+  while (current_token (strm)->type != ETKN)
     {
       skip_token (strm, NEWLINE);
 
-      if (current_token (strm) != NULL)
+      if (current_token (strm)->type != ETKN)
         {
           add_command (cmd_strm, parse_command_sequence (strm));
         }
