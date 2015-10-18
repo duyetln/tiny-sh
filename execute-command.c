@@ -58,13 +58,47 @@ execute_or_command (command_t cmd, int tt)
 void
 execute_pipe_command (command_t cmd, int tt)
 {
-cmd; tt;
+  pid_t l_pid;
+  pid_t r_pid;
+  int pfd[2];
+  int status;
+
+  pipe (pfd);
+  l_pid = fork ();
+  if (l_pid == 0)
+    {
+      close (pfd[0]);
+      dup2 (pfd[1], STDOUT_FILENO);
+      close (pfd[1]);
+      execute_command (cmd->u.command[0], tt);
+      exit (cmd->u.command[0]->status);
+    }
+  else if (l_pid > 0)
+    {
+      r_pid = fork ();
+      if (r_pid == 0)
+        {
+          close (pfd[1]);
+          dup2 (pfd[0], STDIN_FILENO);
+          close (pfd[0]);
+          execute_command (cmd->u.command[1], tt);
+          exit (cmd->u.command[1]->status);
+        }
+      else if (r_pid > 0)
+        {
+          close (pfd[0]);
+          close (pfd[1]);
+          waitpid (l_pid, &status, 0);
+          waitpid (r_pid, &status, 0); // overwrite status
+          cmd->status = status;
+        }
+    }
 }
 
 void
 execute_simple_command (command_t cmd, int tt)
 {
-  tt;
+  tt; // silent compiler warnings
   pid_t child_pid;
   int status;
 
@@ -93,10 +127,8 @@ execute_simple_command (command_t cmd, int tt)
   else if (child_pid > 0)
     {
       waitpid (child_pid, &status, 0);
-      cmd->status = status;
+      cmd->status = WEXITSTATUS (status);
     }
-  else
-    cmd->status = errno;
 }
 
 void
@@ -133,8 +165,6 @@ execute_subshell_command (command_t cmd, int tt)
       waitpid (child_pid, &status, 0);
       cmd->status = status;
     }
-  else
-    cmd->status = errno;
 }
 
 void
