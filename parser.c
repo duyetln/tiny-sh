@@ -34,7 +34,7 @@ command_t
 parse_command_sequence (token_stream_t strm);
 
 command_t
-create_command(enum command_type t)
+create_command (enum command_type t)
 {
   command_t cmd = malloc_command;
   cmd->type = t;
