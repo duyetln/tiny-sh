@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "command.h"
 
@@ -95,6 +96,32 @@ execute_pipe_command (command_t cmd, int tt)
     }
 }
 
+int
+open_input_redirection (command_t cmd)
+{
+  int input = open (cmd->input, O_RDONLY);
+  if (input != -1)
+    {
+      dup2 (input, STDIN_FILENO);
+      close (input);
+    }
+
+  return input;
+}
+
+int
+open_output_redirection (command_t cmd)
+{
+  int output = open (cmd->output, O_WRONLY | O_CREAT);
+  if (output != -1)
+    {
+      dup2 (output, STDOUT_FILENO);
+      close (output);
+    }
+
+  return output;
+}
+
 void
 execute_simple_command (command_t cmd, int tt)
 {
@@ -105,22 +132,11 @@ execute_simple_command (command_t cmd, int tt)
   child_pid = fork ();
   if (child_pid == 0)
     {
-      int input;
-      int output;
+      if (cmd->input != NULL && open_input_redirection (cmd) == -1)
+        error (errno, errno, "%s", cmd->input);
 
-      if (cmd->input != NULL)
-        {
-          input = open (cmd->input, O_RDONLY);
-          dup2 (input, STDIN_FILENO);
-          close (input);
-        }
-
-      if (cmd->output != NULL)
-        {
-          output = open (cmd->output, O_WRONLY | O_CREAT);
-          dup2 (output, STDOUT_FILENO);
-          close (output);
-        }
+      if (cmd->output != NULL && open_output_redirection (cmd) == -1)
+        error (errno, errno, "%s", cmd->output);
 
       execvp (cmd->u.word[0], cmd->u.word);
     }
@@ -140,22 +156,11 @@ execute_subshell_command (command_t cmd, int tt)
   child_pid = fork ();
   if (child_pid == 0)
     {
-      int input;
-      int output;
+      if (cmd->input != NULL && open_input_redirection (cmd) == -1)
+        error (errno, errno, "%s", cmd->input);
 
-      if (cmd->input != NULL)
-        {
-          input = open (cmd->input, O_RDONLY);
-          dup2 (input, STDIN_FILENO);
-          close (input);
-        }
-
-      if (cmd->output != NULL)
-        {
-          output = open (cmd->output, O_WRONLY | O_CREAT);
-          dup2 (output, STDOUT_FILENO);
-          close (output);
-        }
+      if (cmd->output != NULL && open_output_redirection (cmd) == -1)
+        error (errno, errno, "%s", cmd->output);
 
       execute_command (cmd->u.subshell_command, tt);
       exit (cmd->u.subshell_command->status);
