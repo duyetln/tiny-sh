@@ -25,3 +25,9 @@ destroy_command_stream (command_stream_t strm);
 
 command_t
 next_command (command_stream_t strm);
+
+command_t
+current_command (command_stream_t strm);
+
+command_t
+reset_command_stream (command_stream_t strm);

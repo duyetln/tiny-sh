@@ -397,14 +397,25 @@ destroy_command_stream (command_stream_t strm)
     }
 }
 
-command_t next_command (command_stream_t strm)
+command_t
+next_command (command_stream_t strm)
 {
   if (strm->curr != NULL)
     {
-      command_t cmd = strm->curr->value;
       strm->curr = strm->curr->next;
-      return cmd;
     }
-  else
-    return NULL;
+  return current_command (strm);
+}
+
+command_t
+current_command (command_stream_t strm)
+{
+  return strm->curr != NULL ? strm->curr->value : NULL;
+}
+
+command_t
+reset_command_stream (command_stream_t strm)
+{
+  strm->curr = strm->head;
+  return current_command (strm);
 }
