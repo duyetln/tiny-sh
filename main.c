@@ -5,7 +5,8 @@
 #include <getopt.h>
 #include <stdio.h>
 
-#include "command.h"
+#include "command_utility.h"
+#include "command_stream.h"
 
 static char const *program_name;
 static char const *script_name;
@@ -50,11 +51,11 @@ main (int argc, char **argv)
   if (! script_stream)
     error (1, errno, "%s: cannot open", script_name);
   command_stream_t command_stream =
-    make_command_stream (get_next_byte, script_stream);
+    create_command_stream (get_next_byte, script_stream);
 
   command_t last_command = NULL;
   command_t command;
-  while ((command = read_command_stream (command_stream)))
+  while ((command = next_command (command_stream)))
     {
       if (print_tree)
         {

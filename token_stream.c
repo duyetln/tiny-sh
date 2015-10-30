@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <error.h>
 
-#include "scanner.h"
+#include "token_stream.h"
 
 // move backwars unless EOF
 #define incr_line(strm) (((strm)->curr != NULL && (strm)->curr->value->type == NEWLINE) && (strm)->line++)

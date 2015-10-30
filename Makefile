@@ -12,24 +12,22 @@ TEST_BASES = $(subst .sh,,$(TESTS))
 
 TIMETRASH_SOURCES = \
   alloc.c \
-  execute-command.c \
   main.c \
-  read-command.c \
-  print-command.c \
-  scanner.c \
-  parser.c
+  token_stream.c \
+  command_stream.c \
+  command_utility.c
 TIMETRASH_OBJECTS = $(subst .c,.o,$(TIMETRASH_SOURCES))
 
 DIST_SOURCES = \
-  $(TIMETRASH_SOURCES) alloc.h command.h scanner.h parser.h Makefile \
+  $(TIMETRASH_SOURCES) alloc.h command.h command_utility.h token_stream.h command_stream.h Makefile \
   $(TESTS) check-dist README
 
 timetrash: $(TIMETRASH_OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(TIMETRASH_OBJECTS)
 
 alloc.o: alloc.h
-execute-command.o main.o print-command.o read-command.o: command.h scanner.h parser.h
-execute-command.o print-command.o read-command.o: command.h scanner.h parser.h
+execute-command.o main.o print-command.o read-command.o: command.h command_utility.h token_stream.h command_stream.h
+execute-command.o print-command.o read-command.o: command.h command_utility.h token_stream.h command_stream.h
 
 dist: $(DISTDIR).tar.gz
 

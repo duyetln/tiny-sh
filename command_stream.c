@@ -5,9 +5,8 @@
 
 #include <error.h>
 
-#include "command.h"
-#include "scanner.h"
-#include "parser.h"
+#include "token_stream.h"
+#include "command_stream.h"
 
 #define malloc_command ((command_t) malloc (sizeof (struct command)))
 #define malloc_command_node ((command_node_t) malloc (sizeof (struct command_node)))
