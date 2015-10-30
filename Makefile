@@ -15,19 +15,20 @@ TIMETRASH_SOURCES = \
   main.c \
   token_stream.c \
   command_stream.c \
-  command_utility.c
+  command_utility.c \
+  concurrent_commands.c
 TIMETRASH_OBJECTS = $(subst .c,.o,$(TIMETRASH_SOURCES))
 
 DIST_SOURCES = \
-  $(TIMETRASH_SOURCES) alloc.h command.h command_utility.h token_stream.h command_stream.h Makefile \
+  $(TIMETRASH_SOURCES) alloc.h command.h command_utility.h token_stream.h command_stream.h concurrent_commands.h Makefile \
   $(TESTS) check-dist README
 
 timetrash: $(TIMETRASH_OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(TIMETRASH_OBJECTS)
 
 alloc.o: alloc.h
-execute-command.o main.o print-command.o read-command.o: command.h command_utility.h token_stream.h command_stream.h
-execute-command.o print-command.o read-command.o: command.h command_utility.h token_stream.h command_stream.h
+execute-command.o main.o print-command.o read-command.o: command.h command_utility.h token_stream.h command_stream.h concurrent_commands.h
+execute-command.o print-command.o read-command.o: command.h command_utility.h token_stream.h command_stream.h concurrent_commands.h
 
 dist: $(DISTDIR).tar.gz
 
