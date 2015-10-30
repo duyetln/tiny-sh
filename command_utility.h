@@ -1,3 +1,6 @@
+#ifndef COMMAND_UTILITY_H
+#define COMMAND_UTILITY_H
+
 #include "command.h"
 
 /* Print a command to stdout, for debugging.  */
@@ -13,3 +16,5 @@ execute_command (command_t cmd);
    Wait for the command, if it is not already finished.  */
 int
 command_status (command_t cmd);
+
+#endif
