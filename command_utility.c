@@ -68,22 +68,22 @@ command_status (command_t c)
 }
 
 void
-execute_sequence_command (command_t cmd, int tt)
+execute_sequence_command (command_t cmd)
 {
-  execute_command (cmd->u.command[0], tt);
-  execute_command (cmd->u.command[1], tt);
+  execute_command (cmd->u.command[0]);
+  execute_command (cmd->u.command[1]);
   cmd->status = cmd->u.command[1]->status;
 }
 
 void
-execute_and_command (command_t cmd, int tt)
+execute_and_command (command_t cmd)
 {
   int i;
   command_t c = NULL;
   for (i = 0; i < 2; i++)
     {
       c = cmd->u.command[i];
-      execute_command (c, tt);
+      execute_command (c);
 
       if (c->status != 0)
         break;
@@ -92,14 +92,14 @@ execute_and_command (command_t cmd, int tt)
 }
 
 void
-execute_or_command (command_t cmd, int tt)
+execute_or_command (command_t cmd)
 {
   int i;
   command_t c = NULL;
   for (i = 0; i < 2; i++)
     {
       c = cmd->u.command[i];
-      execute_command (c, tt);
+      execute_command (c);
 
       if (c->status == 0)
         break;
@@ -108,7 +108,7 @@ execute_or_command (command_t cmd, int tt)
 }
 
 void
-execute_pipe_command (command_t cmd, int tt)
+execute_pipe_command (command_t cmd)
 {
   pid_t l_pid;
   pid_t r_pid;
@@ -122,7 +122,7 @@ execute_pipe_command (command_t cmd, int tt)
       close (pfd[0]);
       dup2 (pfd[1], STDOUT_FILENO);
       close (pfd[1]);
-      execute_command (cmd->u.command[0], tt);
+      execute_command (cmd->u.command[0]);
       exit (cmd->u.command[0]->status);
     }
   else if (l_pid > 0)
@@ -133,7 +133,7 @@ execute_pipe_command (command_t cmd, int tt)
           close (pfd[1]);
           dup2 (pfd[0], STDIN_FILENO);
           close (pfd[0]);
-          execute_command (cmd->u.command[1], tt);
+          execute_command (cmd->u.command[1]);
           exit (cmd->u.command[1]->status);
         }
       else if (r_pid > 0)
@@ -174,9 +174,8 @@ open_output_redirection (command_t cmd)
 }
 
 void
-execute_simple_command (command_t cmd, int tt)
+execute_simple_command (command_t cmd)
 {
-  tt; // silent compiler warnings
   pid_t child_pid;
   int status;
 
@@ -199,7 +198,7 @@ execute_simple_command (command_t cmd, int tt)
 }
 
 void
-execute_subshell_command (command_t cmd, int tt)
+execute_subshell_command (command_t cmd)
 {
   pid_t child_pid;
   int status;
@@ -213,7 +212,7 @@ execute_subshell_command (command_t cmd, int tt)
       if (cmd->output != NULL && open_output_redirection (cmd) == -1)
         error (errno, errno, "%s", cmd->output);
 
-      execute_command (cmd->u.subshell_command, tt);
+      execute_command (cmd->u.subshell_command);
       exit (cmd->u.subshell_command->status);
     }
   else if (child_pid > 0)
@@ -224,16 +223,16 @@ execute_subshell_command (command_t cmd, int tt)
 }
 
 void
-execute_command (command_t c, int tt)
+execute_command (command_t c)
 {
   switch (c->type)
     {
-      case SEQUENCE_COMMAND: execute_sequence_command (c, tt); break;
-      case AND_COMMAND: execute_and_command (c, tt); break;
-      case OR_COMMAND: execute_or_command (c, tt); break;
-      case PIPE_COMMAND: execute_pipe_command (c, tt); break;
-      case SIMPLE_COMMAND: execute_simple_command (c, tt); break;
-      case SUBSHELL_COMMAND: execute_subshell_command (c, tt); break;
+      case SEQUENCE_COMMAND: execute_sequence_command (c); break;
+      case AND_COMMAND: execute_and_command (c); break;
+      case OR_COMMAND: execute_or_command (c); break;
+      case PIPE_COMMAND: execute_pipe_command (c); break;
+      case SIMPLE_COMMAND: execute_simple_command (c); break;
+      case SUBSHELL_COMMAND: execute_subshell_command (c); break;
     }
 }
 
