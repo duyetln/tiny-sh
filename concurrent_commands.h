@@ -1,4 +1,4 @@
 #include "command_stream.h"
 
-void
+int
 parallelize_command_stream (command_stream_t strm);

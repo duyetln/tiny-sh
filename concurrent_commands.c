@@ -322,7 +322,7 @@ destroy_dependencies (dependency_t *deps)
   free (deps);
 }
 
-void
+int
 parallelize_command_stream (command_stream_t strm)
 {
   dependency_t *deps;
@@ -374,6 +374,7 @@ parallelize_command_stream (command_stream_t strm)
         }
     }
   while (wait_pid > 0);
-
   destroy_dependencies (deps);
+
+  return status;
 }
