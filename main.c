@@ -7,6 +7,7 @@
 
 #include "command_utility.h"
 #include "command_stream.h"
+#include "concurrent_commands.h"
 
 static char const *program_name;
 static char const *script_name;
@@ -50,15 +51,15 @@ main (int argc, char **argv)
   FILE *script_stream = fopen (script_name, "r");
   if (! script_stream)
     error (1, errno, "%s: cannot open", script_name);
-  command_stream_t command_stream =
-    create_command_stream (get_next_byte, script_stream);
+
+  command_stream_t command_stream = create_command_stream (get_next_byte, script_stream);
 
   command_t last_command = NULL;
   command_t command;
+  int status;
 
   if (time_travel)
-    {
-    }
+    status = parallelize_command_stream (command_stream);
   else
     {
       while ((command = current_command (command_stream)))
@@ -76,7 +77,12 @@ main (int argc, char **argv)
 
           next_command (command_stream);
         }
+
+      status = print_tree || !last_command ? 0 : command_status (last_command);
     }
 
-  return print_tree || !last_command ? 0 : command_status (last_command);
+  fclose (script_stream);
+  destroy_command_stream (command_stream);
+
+  return status;
 }
