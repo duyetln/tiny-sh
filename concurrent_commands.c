@@ -1,20 +1,28 @@
 #include <stdlib.h>
 #include <string.h>
+#include <error.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <stdlib.h>
 
 #include "concurrent_commands.h"
+#include "command_utility.h"
 
 struct dependency
 {
   int index;
   int count;
   int started;
+  pid_t pid;
 
   struct command *cmd;
   struct dependency **waiters;
   struct dependency **blockers;
   char **reads;
   char **writes;
-
 };
 
 typedef struct dependency *dependency_t;
@@ -229,6 +237,7 @@ create_dependency (command_t cmd, int index, int count)
   dep->index = index;
   dep->count = count;
   dep->started = FALSE;
+  dep->pid = -1;
   dep->cmd = cmd;
   dep->reads = get_reads (cmd);
   dep->writes = get_writes (cmd);
@@ -305,10 +314,66 @@ void
 destroy_dependencies (dependency_t *deps)
 {
   dependency_t *tmp = deps;
-  while (*tmp)
+  while (tmp && *tmp)
   {
     destroy_dependency (*tmp);
     tmp++;
   }
   free (deps);
+}
+
+void
+parallelize_command_stream (command_stream_t strm)
+{
+  dependency_t *deps;
+  dependency_t *it;
+  dependency_t dep;
+  pid_t fork_pid;
+  pid_t wait_pid;
+  int status;
+
+  deps = create_dependencies (strm);
+  do
+    {
+      it = deps;
+      while (it && *it)
+        {
+          dep = *it;
+          if (unblocked (dep) && !dep->started)
+            {
+              fork_pid = fork ();
+              if (fork_pid == 0)
+                {
+                  execute_command (dep->cmd);
+                  exit (dep->cmd->status);
+                }
+              else if (fork_pid > 0)
+                {
+                  dep->started = TRUE;
+                  dep->pid = fork_pid;
+                }
+            }
+          it++;
+        }
+
+      wait_pid = wait (&status);
+      if (wait_pid > 0)
+        {
+          it = deps;
+          while (it && *it)
+            {
+              dep = *it;
+              if (dep->pid == wait_pid)
+                {
+                  dep->cmd->status = status;
+                  unblock_waiters (dep);
+                  break;
+                }
+              it++;
+            }
+        }
+    }
+  while (wait_pid > 0);
+
+  destroy_dependencies (deps);
 }
