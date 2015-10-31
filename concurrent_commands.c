@@ -7,18 +7,18 @@
 struct dependency
 {
   int index;
+  int count;
 
   struct command *cmd;
+  struct dependency **waiters;
+  struct dependency **blockers;
   char **reads;
   char **writes;
-  int **waiters;
-  int **blockers;
+
 };
 
 typedef struct dependency *dependency_t;
 
-#define TRUE 1
-#define FALSE 0
 #define malloc_pointer(type, count) ((type *) malloc ((count) * sizeof (type)))
 
 char **
@@ -177,39 +177,23 @@ intersect (char **first, char **second)
       while (it2 && *it2)
         {
           if (strcmp (*it1, *it2) == 0)
-            return TRUE;
+            return 1;
           it2++;
         }
       it1++;
     }
 
-  return FALSE;
+  return 0;
 }
 
-int **
-create_int_pointers_array (int count, int fill)
+dependency_t *
+create_dep_ptr_arr (int count)
 {
-  int **arr = malloc_pointer (int *, count + 1);
-  arr[count] = NULL;
-  while (*arr)
-    {
-      *arr = malloc_pointer (int, 1);
-      **arr = fill;
-      arr++;
-    }
-  return arr - count;
-}
-
-void
-destroy_int_pointers_array (int **arr)
-{
-  int **it = arr;
-  while (*it)
-    {
-      free (*it);
-      it++;
-    }
-  free (arr);
+  dependency_t *arr = malloc_pointer (dependency_t, count);
+  int it = 0;
+  while (it < count)
+    arr[it++] = NULL;
+  return arr;
 }
 
 dependency_t
@@ -217,11 +201,12 @@ create_dependency (command_t cmd, int index, int count)
 {
   dependency_t dep = malloc_pointer (struct dependency, 1);
   dep->index = index;
+  dep->count = count;
   dep->cmd = cmd;
   dep->reads = get_reads (cmd);
   dep->writes = get_writes (cmd);
-  dep->waiters = create_int_pointers_array (count, FALSE);
-  dep->blockers = create_int_pointers_array (count, FALSE);
+  dep->waiters = create_dep_ptr_arr (count);
+  dep->blockers = create_dep_ptr_arr (count);
   return dep;
 }
 
@@ -230,8 +215,8 @@ destroy_dependency (dependency_t dep)
 {
   free (dep->reads);
   free (dep->writes);
-  destroy_int_pointers_array (dep->waiters);
-  destroy_int_pointers_array (dep->blockers);
+  free (dep->waiters);
+  free (dep->blockers);
   free (dep);
 }
 
@@ -276,8 +261,8 @@ create_dependencies (command_stream_t strm)
             intersect (dep2->reads, dep1->writes) || // Write-After-Read
             intersect (dep2->writes, dep1->writes)) // Write-After-Write
             {
-              *(dep1->waiters[dep2->index]) = TRUE;
-              *(dep2->blockers[dep1->index]) = TRUE;
+              dep1->waiters[dep2->index] = dep2;
+              dep2->blockers[dep1->index] = dep1;
             }
           it2++;
         }
