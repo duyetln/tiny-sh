@@ -213,8 +213,10 @@ create_dependency (command_t cmd, int index, int count)
 void
 destroy_dependency (dependency_t dep)
 {
-  free (dep->reads);
-  free (dep->writes);
+  if (dep->reads)
+    free (dep->reads);
+  if (dep->writes)
+    free (dep->writes);
   free (dep->waiters);
   free (dep->blockers);
   free (dep);
@@ -261,8 +263,8 @@ create_dependencies (command_stream_t strm)
             intersect (dep2->reads, dep1->writes) || // Write-After-Read
             intersect (dep2->writes, dep1->writes)) // Write-After-Write
             {
-              dep1->waiters[dep2->index] = dep2;
-              dep2->blockers[dep1->index] = dep1;
+              dep2->waiters[dep1->index] = dep1;
+              dep1->blockers[dep2->index] = dep2;
             }
           it2++;
         }
@@ -276,7 +278,7 @@ void
 destroy_dependencies (dependency_t *deps)
 {
   dependency_t *tmp = deps;
-  while (tmp)
+  while (*tmp)
   {
     destroy_dependency (*tmp);
     tmp++;
