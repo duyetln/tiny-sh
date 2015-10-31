@@ -29,29 +29,21 @@ merge (char **first, char **second)
   count = 0;
 
   tmp = first;
-  while (tmp++)
+  while (*tmp++)
     count++;
 
   tmp = second;
-  while (tmp++)
+  while (*tmp++)
     count++;
 
   if (count > 0)
     {
       tmp = (char **) malloc ((count + 1) * sizeof (char *));
       tmp[count] = NULL;
-      while (first)
-        {
-          tmp = first;
-          tmp++;
-          first++;
-        }
-      while (second)
-        {
-          tmp = second;
-          tmp++;
-          second++;
-        }
+      while (*first)
+        *tmp++ = *first++;
+      while (*second)
+        *tmp++ = *second++;
       tmp = tmp - count;
       return tmp;
     }
