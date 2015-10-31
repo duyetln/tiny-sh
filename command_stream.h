@@ -1,3 +1,6 @@
+#ifndef COMMAND_STREAM_H
+#define COMMAND_STREAM_H
+
 #include "command.h"
 
 struct command_node
@@ -31,3 +34,5 @@ current_command (command_stream_t strm);
 
 command_t
 reset_command_stream (command_stream_t strm);
+
+#endif

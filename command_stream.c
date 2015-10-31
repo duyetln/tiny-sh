@@ -338,8 +338,8 @@ destroy_command (command_t cmd)
 {
   switch (cmd->type)
     {
-      case AND_COMMAND:
       case SEQUENCE_COMMAND:
+      case AND_COMMAND:
       case OR_COMMAND:
       case PIPE_COMMAND:
         {

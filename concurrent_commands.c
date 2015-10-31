@@ -29,20 +29,20 @@ merge (char **first, char **second)
   count = 0;
 
   tmp = first;
-  while (*tmp++)
+  while (tmp && *tmp++)
     count++;
 
   tmp = second;
-  while (*tmp++)
+  while (tmp && *tmp++)
     count++;
 
   if (count > 0)
     {
       tmp = (char **) malloc ((count + 1) * sizeof (char *));
       tmp[count] = NULL;
-      while (*first)
+      while (first && *first)
         *tmp++ = *first++;
-      while (*second)
+      while (second && *second)
         *tmp++ = *second++;
       tmp = tmp - count;
       return tmp;
@@ -54,15 +54,113 @@ merge (char **first, char **second)
 char **
 get_reads (command_t cmd)
 {
-  cmd;
-  return NULL;
+  char **result = NULL;
+  char **first = NULL;
+  char **second = NULL;
+
+  switch (cmd->type)
+    {
+      case SEQUENCE_COMMAND:
+      case AND_COMMAND:
+      case OR_COMMAND:
+      case PIPE_COMMAND:
+        {
+          first = get_reads (cmd->u.command[0]);
+          second = get_reads (cmd->u.command[1]);
+          result =  merge (first, second);
+          break;
+        }
+      case SUBSHELL_COMMAND:
+        {
+          result = get_reads (cmd->u.subshell_command);
+          break;
+        }
+      case SIMPLE_COMMAND:
+        {
+          result = merge (cmd->u.word + 1, NULL);
+          break;
+        }
+   }
+
+  switch (cmd->type)
+    {
+      case SIMPLE_COMMAND:
+      case SUBSHELL_COMMAND:
+        {
+          if (cmd->input)
+            {
+              first = result;
+              second = (char **) malloc (2 * sizeof (char *));
+              second[1] = NULL;
+              second[0] = cmd->input;
+              result = merge (first, second);
+            }
+          break;
+        }
+      default:
+        ;
+    }
+
+  if (first)
+    free (first);
+  if (second)
+    free (second);
+
+  return result;
 }
 
 char **
 get_writes (command_t cmd)
 {
-  cmd;
-  return NULL;
+  char **result = NULL;
+  char **first = NULL;
+  char **second = NULL;
+  switch (cmd->type)
+    {
+      case SEQUENCE_COMMAND:
+      case AND_COMMAND:
+      case OR_COMMAND:
+      case PIPE_COMMAND:
+        {
+          first = get_writes (cmd->u.command[0]);
+          second = get_writes (cmd->u.command[1]);
+          result =  merge (first, second);
+          break;
+        }
+      case SUBSHELL_COMMAND:
+        {
+          result = get_writes (cmd->u.subshell_command);
+          break;
+        }
+      case SIMPLE_COMMAND:
+        ;
+   }
+
+  switch (cmd->type)
+    {
+      case SIMPLE_COMMAND:
+      case SUBSHELL_COMMAND:
+        {
+          if (cmd->output)
+            {
+              first = result;
+              second = (char **) malloc (2 * sizeof (char *));
+              second[1] = NULL;
+              second[0] = cmd->output;
+              result = merge (first, second);
+            }
+          break;
+         }
+      default:
+        ;
+    }
+
+  if (first)
+    free (first);
+  if (second)
+    free (second);
+
+  return result;
 }
 
 dependency_t *
