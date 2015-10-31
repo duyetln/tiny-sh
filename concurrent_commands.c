@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <string.h>
-#include <error.h>
 
 #include "concurrent_commands.h"
 
@@ -8,6 +7,7 @@ struct dependency
 {
   int index;
   int count;
+  int started;
 
   struct command *cmd;
   struct dependency **waiters;
@@ -19,6 +19,8 @@ struct dependency
 
 typedef struct dependency *dependency_t;
 
+#define TRUE 1
+#define FALSE 0
 #define malloc_pointer(type, count) ((type *) malloc ((count) * sizeof (type)))
 
 char **
@@ -164,6 +166,30 @@ get_writes (command_t cmd)
   return result;
 }
 
+void
+unblock_waiters (dependency_t dep)
+{
+  int it = 0;
+  while (it < dep->count)
+    {
+      if (dep->waiters[it])
+        dep->waiters[it]->blockers[dep->index] = NULL;
+      dep->waiters[it] = NULL;
+      it++;
+    }
+}
+
+int
+unblocked (dependency_t dep)
+{
+  int it = 0;
+  while (it < dep->count)
+    if (dep->blockers[it++])
+      return FALSE;
+
+  return TRUE;
+}
+
 int
 intersect (char **first, char **second)
 {
@@ -177,13 +203,13 @@ intersect (char **first, char **second)
       while (it2 && *it2)
         {
           if (strcmp (*it1, *it2) == 0)
-            return 1;
+            return TRUE;
           it2++;
         }
       it1++;
     }
 
-  return 0;
+  return FALSE;
 }
 
 dependency_t *
@@ -202,6 +228,7 @@ create_dependency (command_t cmd, int index, int count)
   dependency_t dep = malloc_pointer (struct dependency, 1);
   dep->index = index;
   dep->count = count;
+  dep->started = FALSE;
   dep->cmd = cmd;
   dep->reads = get_reads (cmd);
   dep->writes = get_writes (cmd);
