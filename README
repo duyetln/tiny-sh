@@ -3,25 +3,29 @@ Notations for shell syntax:
 CHAR =  "a"|"b"|"c"|"d"|"e"|"f"|"g"|"h"|"i"|"j"|"k"|"l"|"m"|"n"|"o"|"p"|"q"|"r"|"s"|"t"|"u"|"v"|"w"|"x"|"y"|"z"
        |"A"|"B"|"C"|"D"|"E"|"F"|"G"|"H"|"I"|"J"|"K"|"L"|"M"|"N"|"O"|"P"|"Q"|"R"|"S"|"T"|"U"|"V"|"W"|"X"|"Y"|"Z"
        |"!"|"%"|"+"|","|"-"|"."|"/"|":"|"@"|"^"|"_"
-       |0|1|2|3|4|5|6|7|8|9|;
+       |DIGIT;
+
+DIGIT = 0|1|2|3|4|5|6|7|8|9;
 
 WORD = CHAR , { CHAR };
 
-IO_REDIRECTION = "<" , WORD | ">" , WORD;
+IO_NUMBER = "&", DIGIT , { DIGIT };
+
+IO_REDIRECTION = [ IO_NUMBER ] ,  ( "<" , ( WORD | IO_NUMBER ) ) | ( "<>" , WORD ) | ( ">" , ( WORD | IO_NUMBER ) ) | ( ">>" , WORD ) | ( ">|" , WORD );
 
 SIMPLE_COMMAND = WORD , { WORD };
 
-COMMAND = (SIMPLE_COMMAND | SUBSHELL_COMMAND) , { IO_REDIRECTION };
+COMMAND = ( SIMPLE_COMMAND | SUBSHELL_COMMAND ) , { IO_REDIRECTION };
 
-SUBSHELL_COMMAND = "(" , { "\n" }, COMMAND_SEQUENCE , { "\n" } ")";
+SUBSHELL_COMMAND = "(" , COMMAND_SEQUENCE , ")";
 
-PIPELINES = COMMAND , { "|" , { "\n" } , COMMAND };
+PIPELINES = COMMAND , { "|" , COMMAND };
 
-LOGICALS = PIPELINES , { ("&&" | "||") , { "\n" } , PIPELINES };
+LOGICALS = PIPELINES , { ( "&&" | "||" ) , PIPELINES };
 
-COMMAND_SEQUENCE = LOGICALS , { (";" | "\n" | ( ";" , "\n" ) ) , [ LOGICALS ] }, [ ";" ];
+COMMAND_SEQUENCE = LOGICALS , { ";" , LOGICALS };
 
-COMPUTATION = { { "\n" } , [ COMMAND_SEQUENCE ] };
+The start symbol is COMMAND_SEQUENCE.
 
 I wrote down the syntax for the shell as above before implementing the parser so that:
 _ I can have a clear understanding of what is expected from the syntax, such as operator precedence or expected tokens. For example, since PIPELINES is parsed before LOGICALS, this makes clear that "|" has higher precedence that "&&" or "||".
