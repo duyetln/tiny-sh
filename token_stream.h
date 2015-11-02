@@ -1,21 +1,25 @@
 enum token_type
 {
   WORD,
+  IONUMBER,
   INPUT,      // "<"
+  IODUAL,     // "<>"
   OUTPUT,     // ">"
+  APPEND,     // ">>"
+  CLOBBER,    // ">|"
   PIPE,       // "|"
   OPENPAREN,  // "("
   CLOSEPAREN, // ")"
   AND,        // "&&"
   OR,         // "||"
   SEMICOLON,  // ";"
-  NEWLINE,    // "\n"
   ETKN,       // "End Token", aka EOF
 };
 
 struct token
 {
   enum token_type type;
+  int line;
   char *value;
 };
 
@@ -31,8 +35,6 @@ struct token_stream
   struct token_node *head;
   struct token_node *tail;
   struct token_node *curr;
-  int total_lines;
-  int line;
 };
 
 typedef struct token *token_t;

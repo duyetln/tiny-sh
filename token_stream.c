@@ -7,8 +7,6 @@
 #include "token_stream.h"
 
 // move backwars unless EOF
-#define incr_line(strm) (((strm)->curr != NULL && (strm)->curr->value->type == NEWLINE) && (strm)->line++)
-#define decr_line(strm) (((strm)->curr != NULL && (strm)->curr->value->type == NEWLINE) && (strm)->line--)
 #define move_backwards(c, file, count) ((c) != EOF && fseek(file, ftell(file) - (count), SEEK_SET))
 #define malloc_token ((token_t) malloc (sizeof (struct token)))
 #define malloc_token_node ((token_node_t) malloc (sizeof (struct token_node)))
@@ -44,7 +42,6 @@ token_t
 reset_token_stream (token_stream_t strm)
 {
   strm->curr = strm->head;
-  strm->line = 1;
   return current_token (strm);
 }
 
@@ -52,10 +49,7 @@ token_t
 forward_token_stream (token_stream_t strm, int c)
 {
   while (c-- > 0 && strm->curr->value->type != ETKN)
-  {
-    incr_line (strm);
     strm->curr = strm->curr->next;
-  }
   return current_token (strm);
 }
 
@@ -63,10 +57,7 @@ token_t
 backward_token_stream (token_stream_t strm, int c)
 {
   while (c-- > 0 && strm->curr != strm->head)
-  {
     strm->curr = strm->curr->prev;
-    decr_line (strm);
-  }
   return current_token (strm);
 }
 
@@ -74,13 +65,9 @@ token_t
 skip_token (token_stream_t strm, enum token_type t)
 {
   while (strm->curr->value->type != ETKN && strm->curr->value->type == t)
-  {
-    incr_line (strm);
     strm->curr = strm->curr->next;
-  }
   return current_token (strm);
 }
-
 
 void
 destroy_token_stream (token_stream_t strm)
@@ -130,33 +117,65 @@ add_token (token_stream_t strm, token_t tkn)
   return node;
 }
 
+token_t
+create_token (enum token_type type, char *value, int line)
+{
+  token_t tkn = malloc_token;
+  tkn->type = type;
+  tkn->value = value;
+  tkn->line = line;
+
+  return tkn;
+}
+
+void
+bufferadd (char **buffer, int *size, int *count, char c)
+{
+  if (*buffer == NULL)
+    {
+      *buffer = (char *) malloc (*size * sizeof (char));
+      *count = 0;
+    }
+
+  if (*count >= *size)
+    {
+      *size *= 2;
+      char *newbuffer = (char *) malloc (*size * sizeof (char));
+      strncpy (newbuffer, *buffer, *count);
+      free (*buffer);
+      *buffer = newbuffer;
+    }
+
+  (*buffer)[(*count)++] = c;
+}
+
 token_stream_t
 create_token_stream (int (*next_char) (void *), void *file)
 {
-  int c = (*next_char)(file);
+  int c = (*next_char) (file);
+  int line = 1;
 
   token_stream_t strm = malloc_token_stream;
   strm->head = NULL;
   strm->tail = NULL;
   strm->curr = NULL;
-  strm->total_lines = 1;
-  strm->line = 1;
 
   token_t tkn = NULL;
 
   while (c != EOF)
     {
-      while (isspace (c) && c != '\n')
-        c = (*next_char)(file);
-
-      if (c == '\n')
-        strm->total_lines++;
+      while (isspace (c))
+        {
+          if (c == '\n')
+            line++;
+          c = (*next_char) (file);
+        }
 
       if (c == '#')
         {
           do
             {
-              c = (*next_char)(file);
+              c = (*next_char) (file);
             }
           while (c != '\n');
           move_backwards (c, file, 1);
@@ -166,102 +185,87 @@ create_token_stream (int (*next_char) (void *), void *file)
           // this should be more than enough, hopefully
           int size = 50;
           int count = 0;
-          char *buffer = (char *) malloc ((sizeof (char)) * size);
+          char *buffer = NULL;
           while (iswordchar (c))
             {
-              if (count >= size)
-                {
-                  size *= 2;
-                  char *newbuffer = (char *) malloc ((sizeof (char)) * size);
-                  strncpy (newbuffer, buffer, count);
-                  free (buffer);
-                  buffer = newbuffer;
-                }
-
-              buffer[count++] = c;
-              c = (*next_char)(file);
+              bufferadd (&buffer, &size, &count, c);
+              c = (*next_char) (file);
             }
 
           move_backwards (c, file, 1);
-
-          tkn = malloc_token;
-          tkn->type = WORD;
-          tkn->value = strndup (buffer, count);
-
+          tkn = create_token (WORD, strndup (buffer, count), line);
           free (buffer);
         }
       else if (c == '<')
         {
-          tkn = malloc_token;
-          tkn->type = INPUT;
-          tkn->value = strdup ("<");
+          c = (*next_char) (file);
+          if (c == '>')
+            tkn = create_token (IODUAL, strdup ("<>"), line);
+          else
+            {
+              tkn = create_token (INPUT, strdup ("<"), line);
+              move_backwards (c, file, 1);
+            }
         }
       else if (c == '>')
         {
-          tkn = malloc_token;
-          tkn->type = OUTPUT;
-          tkn->value = strdup (">");
-        }
-      else if (c == '(')
-        {
-          tkn = malloc_token;
-          tkn->type = OPENPAREN;
-          tkn->value = strdup ("(");
-        }
-      else if (c == ')')
-        {
-          tkn = malloc_token;
-          tkn->type = CLOSEPAREN;
-          tkn->value = strdup (")");
-        }
-      else if (c == ';')
-        {
-          tkn = malloc_token;
-          tkn->type = SEMICOLON;
-          tkn->value = strdup (";");
-        }
-      else if (c == '\n')
-        {
-          tkn = malloc_token;
-          tkn->type = NEWLINE;
-          tkn->value = strdup ("\n");
-        }
-      else if (c == '|')
-        {
-          c = (*next_char)(file);
-          if (c == '|')
-            {
-              tkn = malloc_token;
-              tkn->type = OR;
-              tkn->value = strdup ("||");
-            }
+          c = (*next_char) (file);
+          if (c == '>')
+            tkn = create_token (APPEND, strdup (">>"), line);
+          else if (c == '|')
+            tkn = create_token (CLOBBER, strdup (">|"), line);
           else
             {
-              tkn = malloc_token;
-              tkn->type = PIPE;
-              tkn->value = strdup ("|");
-
+              tkn = create_token (OUTPUT, strdup (">"), line);
+              move_backwards (c, file, 1);
+            }
+        }
+      else if (c == '(')
+        tkn = create_token (OPENPAREN, strdup ("("), line);
+      else if (c == ')')
+        tkn = create_token (CLOSEPAREN, strdup (")"), line);
+      else if (c == ';')
+        tkn = create_token (SEMICOLON, strdup (";"), line);
+      else if (c == '|')
+        {
+          c = (*next_char) (file);
+          if (c == '|')
+            tkn = create_token (OR, strdup ("||"), line);
+          else
+            {
+              tkn = create_token (PIPE, strdup ("|"), line);
               move_backwards (c, file, 1);
             }
         }
       else if (c == '&')
         {
-          c = (*next_char)(file);
+          c = (*next_char) (file);
           if (c == '&')
+            tkn = create_token (AND, strdup ("&&"), line);
+          else if (isdigit (c))
             {
-              tkn = malloc_token;
-              tkn->type = AND;
-              tkn->value = strdup ("&&");
+              int size = 3;
+              int count = 0;
+              char *buffer = NULL;
+              while (isdigit (c))
+                {
+                  bufferadd (&buffer, &size, &count, c);
+                  c = (*next_char) (file);
+                }
+
+              move_backwards (c, file, 1);
+              tkn = create_token (IONUMBER, strndup (buffer, count), line);
+              free (buffer);
             }
           else
             {
-              error (1, 0, "%d: unrecognized token &\n", strm->total_lines);
+              error (1, 0, "%d: unrecognized token &\n", line);
               move_backwards (c, file, 1);
             }
         }
       else
         {
-          error (1, 0, "%d: unrecognized token %c\n", strm->total_lines, c);
+          error (1, 0, "%d: unrecognized token %c\n", line, c);
         }
 
       if (tkn != NULL)
@@ -270,12 +274,10 @@ create_token_stream (int (*next_char) (void *), void *file)
           tkn = NULL;
         }
 
-      c = (*next_char)(file);
+      c = (*next_char) (file);
     }
 
-  tkn = malloc_token;
-  tkn->type = ETKN;
-  tkn->value = strdup ("EOF");
+  tkn = create_token (ETKN, strdup ("EOF"), line);
 
   add_token (strm, tkn);
   tkn = NULL;
