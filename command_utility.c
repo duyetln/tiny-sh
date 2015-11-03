@@ -15,10 +15,10 @@ command_indented_print (int indent, command_t c)
 {
   switch (c->type)
     {
-    case AND_COMMAND:
-    case SEQUENCE_COMMAND:
-    case OR_COMMAND:
-    case PIPE_COMMAND:
+    case CMD_AND:
+    case CMD_SEQUENCE:
+    case CMD_OR:
+    case CMD_PIPE:
       {
         command_indented_print (indent + 2 * (c->u.command[0]->type != c->type), c->u.command[0]);
         static char const command_label[][3] = { "&&", ";", "||", "|" };
@@ -227,12 +227,12 @@ execute_command (command_t c)
 {
   switch (c->type)
     {
-      case SEQUENCE_COMMAND: execute_sequence_command (c); break;
-      case AND_COMMAND: execute_and_command (c); break;
-      case OR_COMMAND: execute_or_command (c); break;
-      case PIPE_COMMAND: execute_pipe_command (c); break;
-      case SIMPLE_COMMAND: execute_simple_command (c); break;
-      case SUBSHELL_COMMAND: execute_subshell_command (c); break;
+      case CMD_SEQUENCE: execute_sequence_command (c); break;
+      case CMD_AND: execute_and_command (c); break;
+      case CMD_OR: execute_or_command (c); break;
+      case CMD_PIPE: execute_pipe_command (c); break;
+      case CMD_SIMPLE: execute_simple_command (c); break;
+      case CMD_SUBSHELL: execute_subshell_command (c); break;
     }
 }
 

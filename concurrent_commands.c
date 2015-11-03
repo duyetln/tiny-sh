@@ -71,22 +71,22 @@ get_reads (command_t cmd)
 
   switch (cmd->type)
     {
-      case SEQUENCE_COMMAND:
-      case AND_COMMAND:
-      case OR_COMMAND:
-      case PIPE_COMMAND:
+      case CMD_SEQUENCE:
+      case CMD_AND:
+      case CMD_OR:
+      case CMD_PIPE:
         {
           first = get_reads (cmd->u.command[0]);
           second = get_reads (cmd->u.command[1]);
           result =  merge (first, second);
           break;
         }
-      case SUBSHELL_COMMAND:
+      case CMD_SUBSHELL:
         {
           result = get_reads (cmd->u.subshell_command);
           break;
         }
-      case SIMPLE_COMMAND:
+      case CMD_SIMPLE:
         {
           result = merge (cmd->u.word + 1, NULL);
           break;
@@ -95,8 +95,8 @@ get_reads (command_t cmd)
 
   switch (cmd->type)
     {
-      case SIMPLE_COMMAND:
-      case SUBSHELL_COMMAND:
+      case CMD_SIMPLE:
+      case CMD_SUBSHELL:
         {
           if (cmd->input)
             {
@@ -128,29 +128,29 @@ get_writes (command_t cmd)
   char **second = NULL;
   switch (cmd->type)
     {
-      case SEQUENCE_COMMAND:
-      case AND_COMMAND:
-      case OR_COMMAND:
-      case PIPE_COMMAND:
+      case CMD_SEQUENCE:
+      case CMD_AND:
+      case CMD_OR:
+      case CMD_PIPE:
         {
           first = get_writes (cmd->u.command[0]);
           second = get_writes (cmd->u.command[1]);
           result =  merge (first, second);
           break;
         }
-      case SUBSHELL_COMMAND:
+      case CMD_SUBSHELL:
         {
           result = get_writes (cmd->u.subshell_command);
           break;
         }
-      case SIMPLE_COMMAND:
+      case CMD_SIMPLE:
         ;
    }
 
   switch (cmd->type)
     {
-      case SIMPLE_COMMAND:
-      case SUBSHELL_COMMAND:
+      case CMD_SIMPLE:
+      case CMD_SUBSHELL:
         {
           if (cmd->output)
             {

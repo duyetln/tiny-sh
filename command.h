@@ -3,12 +3,12 @@
 
 enum command_type
 {
-  AND_COMMAND,         // A && B
-  SEQUENCE_COMMAND,    // A ; B
-  OR_COMMAND,          // A || B
-  PIPE_COMMAND,        // A | B
-  SIMPLE_COMMAND,      // a simple command
-  SUBSHELL_COMMAND,    // ( A )
+  CMD_AND,        // A && B
+  CMD_SEQUENCE,   // A ; B
+  CMD_OR,         // A || B
+  CMD_PIPE,        // A | B
+  CMD_SIMPLE,     // a simple command
+  CMD_SUBSHELL,   // ( A )
 };
 
 // Data associated with a command.

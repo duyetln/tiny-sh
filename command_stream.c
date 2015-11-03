@@ -41,9 +41,9 @@ create_command (enum command_type t)
   cmd->input = NULL;
   cmd->output = NULL;
 
-  if (t == SIMPLE_COMMAND)
+  if (t == CMD_SIMPLE)
     cmd->u.word = NULL;
-  else if (t == SUBSHELL_COMMAND)
+  else if (t == CMD_SUBSHELL)
     cmd->u.subshell_command = NULL;
   else // the remaining command types
     {
@@ -96,7 +96,7 @@ parse_simple_command (token_stream_t strm)
       next_token (strm);
     }
 
-  command_t cmd = create_command (SIMPLE_COMMAND);
+  command_t cmd = create_command (CMD_SIMPLE);
   cmd->u.word = (char**) malloc ((c + 1) * sizeof (char *));
 
   backward_token_stream (strm, c);
@@ -144,7 +144,7 @@ parse_subshell_command (token_stream_t strm)
   next_token (strm);
   skip_token (strm, TKN_NEWLINE);
 
-  command_t cmd = create_command (SUBSHELL_COMMAND);
+  command_t cmd = create_command (CMD_SUBSHELL);
   cmd->u.subshell_command = parse_command_sequence (strm);
 
   skip_token (strm, TKN_NEWLINE);
@@ -195,7 +195,7 @@ parse_pipelines (token_stream_t strm)
       next_token (strm);
       skip_token (strm, TKN_NEWLINE);
 
-      pipe = create_command (PIPE_COMMAND);
+      pipe = create_command (CMD_PIPE);
       rgt = parse_command (strm);
       pipe->u.command[0] = lft;
       pipe->u.command[1] = rgt;
@@ -225,9 +225,9 @@ parse_logicals (token_stream_t strm)
       skip_token (strm, TKN_NEWLINE);
 
       if (t->type == TKN_AND)
-        lgcl = create_command (AND_COMMAND);
+        lgcl = create_command (CMD_AND);
       else if (t->type == TKN_OR)
-        lgcl = create_command (OR_COMMAND);
+        lgcl = create_command (CMD_OR);
 
       rgt = parse_pipelines (strm);
       lgcl->u.command[0] = lft;
@@ -265,7 +265,7 @@ parse_command_sequence (token_stream_t strm)
 
       if (current_token (strm)->type != TKN_EOF)
         {
-          seq = create_command (SEQUENCE_COMMAND);
+          seq = create_command (CMD_SEQUENCE);
           rgt = parse_logicals (strm);
           seq->u.command[0] = lft;
           seq->u.command[1] = rgt;
@@ -343,17 +343,17 @@ destroy_command (command_t cmd)
 {
   switch (cmd->type)
     {
-      case SEQUENCE_COMMAND:
-      case AND_COMMAND:
-      case OR_COMMAND:
-      case PIPE_COMMAND:
+      case CMD_SEQUENCE:
+      case CMD_AND:
+      case CMD_OR:
+      case CMD_PIPE:
         {
           destroy_command (cmd->u.command[0]);
           destroy_command (cmd->u.command[1]);
           break;
         }
 
-      case SIMPLE_COMMAND:
+      case CMD_SIMPLE:
         {
           char **w = cmd->u.word;
           while (*w != NULL)
@@ -365,7 +365,7 @@ destroy_command (command_t cmd)
           break;
         }
 
-      case SUBSHELL_COMMAND:
+      case CMD_SUBSHELL:
         {
           destroy_command (cmd->u.subshell_command);
           break;
