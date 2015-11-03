@@ -44,11 +44,27 @@ command_indented_print (int indent, command_t c)
     default:
       abort ();
     }
+    
+  io_node_t io = c->io_head;
+  while (io != NULL)
+    {
+      printf (" ");
+      if (io->io_num)
+        printf ("%s", io->io_num);
 
-  if (c->input)
-    printf ("<%s", c->input);
-  if (c->output)
-    printf (">%s", c->output);
+      switch (io->op)
+        {
+          case IO_INPUT: printf ("<%s", io->word); break;
+          case IO_DUPIN: printf ("<&%s", io->word); break;
+          case IO_IODUAL: printf ("<>%s", io->word); break;
+          case IO_OUTPUT: printf (">%s", io->word); break;
+          case IO_DUPOUT: printf (">&%s", io->word); break;
+          case IO_APPEND: printf (">>%s", io->word); break;
+          case IO_CLOBBER: printf (">|%s", io->word); break;
+        }
+      
+      io = io->next;
+    }
 }
 
 void
