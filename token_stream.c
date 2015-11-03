@@ -171,8 +171,10 @@ create_token_stream (int (*next_char) (void *), void *file)
             line++;
           c = (*next_char) (file);
         }
-
-      if (c == '#')
+      
+      if (c == EOF)
+        break;
+      else if (c == '#')
         {
           do
             {
@@ -205,12 +207,13 @@ create_token_stream (int (*next_char) (void *), void *file)
                 break;
               }
 
-          if ((last_tkn && (last_tkn->type == TKN_DUPIN || last_tkn->type == TKN_DUPOUT)) ||
-            c == '<' || c == '>')
+          if (last_tkn && (last_tkn->type == TKN_DUPIN || last_tkn->type == TKN_DUPOUT))
             if (isnum)
               tkn = create_token (TKN_IONUMBER, buffer, line);
             else
               error (1, 0, "%d: expecting a number\n", line);
+          else if ((c == '>' || c == '<') && isnum)
+            tkn = create_token (TKN_IONUMBER, buffer, line);
           else
             tkn = create_token (TKN_WORD, buffer, line);
 
