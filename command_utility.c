@@ -26,8 +26,7 @@ command_indented_print (int indent, command_t c)
         command_indented_print (indent + 2 * (c->u.command[1]->type != c->type), c->u.command[1]);
         break;
       }
-
-    case SIMPLE_COMMAND:
+    case CMD_SIMPLE:
       {
         char **w = c->u.word;
         printf ("%*s%s", indent, "", *w);
@@ -35,15 +34,13 @@ command_indented_print (int indent, command_t c)
           printf (" %s", *w);
         break;
       }
-
-    case SUBSHELL_COMMAND:
+    case CMD_SUBSHELL:
       {
         printf ("%*s(\n", indent, "");
         command_indented_print (indent + 1, c->u.subshell_command);
         printf ("\n%*s)", indent, "");
         break;
       }
-
     default:
       abort ();
     }

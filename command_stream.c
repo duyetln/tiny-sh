@@ -12,23 +12,6 @@
 #define malloc_command_node ((command_node_t) malloc (sizeof (struct command_node)))
 #define malloc_command_stream ((command_stream_t) malloc (sizeof (struct command_stream)))
 
-#define not_null(ptr) ((ptr) != NULL)
-// used in parse_command_sequence to detect seperator patterns
-#define sep_case1(curr, next1) (not_null(curr) && \
-  not_null(next1) && \
-  (curr)->type == TKN_NEWLINE && \
-  (next1)->type != TKN_NEWLINE)
-#define sep_case2(curr, next1) (not_null(curr) && \
-  not_null(next1) && \
-  (curr)->type == TKN_SEMICOLON && \
-  (next1)->type != TKN_NEWLINE)
-#define sep_case3(curr, next1, next2) (not_null(curr) && \
-  not_null(next1) && \
-  not_null(next2) && \
-  (curr)->type == TKN_SEMICOLON && \
-  (next1)->type == TKN_NEWLINE && \
-  (next2)->type != TKN_NEWLINE)
-
 command_t
 parse_command_sequence (token_stream_t strm);
 
@@ -143,12 +126,10 @@ parse_subshell_command (token_stream_t strm)
   // printf("parse subshell command: %s\n", current_token (strm)->value);
   assert_token (strm, TKN_OPENPAREN);
   next_token (strm);
-  skip_token (strm, TKN_NEWLINE);
 
   command_t cmd = create_command (CMD_SUBSHELL);
   cmd->u.subshell_command = parse_command_sequence (strm);
 
-  skip_token (strm, TKN_NEWLINE);
   assert_token (strm, TKN_CLOSEPAREN);
   next_token (strm);
 
@@ -194,7 +175,6 @@ parse_pipelines (token_stream_t strm)
   while (t->type == TKN_PIPE)
     {
       next_token (strm);
-      skip_token (strm, TKN_NEWLINE);
 
       pipe = create_command (CMD_PIPE);
       rgt = parse_command (strm);
@@ -223,7 +203,6 @@ parse_logicals (token_stream_t strm)
   while (t->type == TKN_AND || t->type == TKN_OR)
     {
       next_token (strm);
-      skip_token (strm, TKN_NEWLINE);
 
       if (t->type == TKN_AND)
         lgcl = create_command (CMD_AND);
@@ -251,35 +230,15 @@ parse_command_sequence (token_stream_t strm)
 
   lft = parse_logicals (strm);
 
-  token_t curr = current_token (strm);
-  token_t next1 = peek_token (strm, 1);
-  token_t next2 = peek_token (strm, 2);
-
-  while (sep_case1 (curr, next1) ||
-    sep_case2 (curr, next1) ||
-    sep_case3 (curr, next1, next2))
+  while (current_token (strm)->type == TKN_SEMICOLON)
     {
-      if (sep_case1 (curr, next1) || sep_case2 (curr, next1))
-        forward_token_stream (strm, 1);
-      else if (sep_case3 (curr, next1, next2))
-        forward_token_stream (strm, 2);
-
-      if (current_token (strm)->type != TKN_EOF)
-        {
-          seq = create_command (CMD_SEQUENCE);
-          rgt = parse_logicals (strm);
-          seq->u.command[0] = lft;
-          seq->u.command[1] = rgt;
-          lft = seq;
-        }
-
-      curr = current_token (strm);
-      next1 = peek_token (strm, 1);
-      next2 = peek_token (strm, 2);
+      next_token (strm);
+      rgt = parse_logicals (strm);
+      seq = create_command (CMD_SEQUENCE);
+      seq->u.command[0] = lft;
+      seq->u.command[1] = rgt;
+      lft = seq;
     }
-
-  if (not_null (curr) && curr->type == TKN_SEMICOLON)
-    next_token (strm);
 
   return lft;
 }
@@ -319,10 +278,11 @@ parse (token_stream_t strm)
 
   while (current_token (strm)->type != TKN_EOF)
     {
-      skip_token (strm, TKN_NEWLINE);
+      add_command (cmd_strm, parse_command_sequence (strm));
 
-      if (current_token (strm)->type != TKN_EOF)
+      while (current_token (strm)->type == TKN_DBLSEMICLN)
         {
+          next_token (strm);
           add_command (cmd_strm, parse_command_sequence (strm));
         }
     }
