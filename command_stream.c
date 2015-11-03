@@ -77,6 +77,7 @@ assert_token (token_stream_t strm, enum token_type t)
           case TKN_AND: tw = "'&&'"; break;
           case TKN_OR: tw = "'||'"; break;
           case TKN_SEMICOLON: tw = "';'"; break;
+          case TKN_DBLSEMICLN: tw = "';;'"; break;
           case TKN_EOF: tw = "eof"; break;
         }
 

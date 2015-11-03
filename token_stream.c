@@ -249,7 +249,16 @@ create_token_stream (int (*next_char) (void *), void *file)
       else if (c == ')')
         tkn = create_token (TKN_CLOSEPAREN, strdup (")"), line);
       else if (c == ';')
-        tkn = create_token (TKN_SEMICOLON, strdup (";"), line);
+        {
+          c = (*next_char) (file);
+          if (c == ';')
+            tkn = create_token (TKN_DBLSEMICLN, strdup (";;"), line);
+          else
+            {
+              tkn = create_token (TKN_SEMICOLON, strdup (";"), line);
+              move_backwards (c, file, 1);
+            }
+        }
       else if (c == '|')
         {
           c = (*next_char) (file);

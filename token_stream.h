@@ -15,7 +15,8 @@ enum token_type
   TKN_AND,        // "&&"
   TKN_OR,         // "||"
   TKN_SEMICOLON,  // ";"
-  TKN_EOF,       // "End Token", aka EOF
+  TKN_DBLSEMICLN, // ";;"
+  TKN_EOF,        // "End Token", aka EOF
 };
 
 struct token
