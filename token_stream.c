@@ -32,7 +32,7 @@ token_t
 peek_token (token_stream_t strm, int c)
 {
   token_node_t n = strm->curr;
-  while (c-- > 0 && n->value->type != ETKN)
+  while (c-- > 0 && n->value->type != TKN_EOF)
     n = n->next;
 
   return n->value;
@@ -48,7 +48,7 @@ reset_token_stream (token_stream_t strm)
 token_t
 forward_token_stream (token_stream_t strm, int c)
 {
-  while (c-- > 0 && strm->curr->value->type != ETKN)
+  while (c-- > 0 && strm->curr->value->type != TKN_EOF)
     strm->curr = strm->curr->next;
   return current_token (strm);
 }
@@ -64,7 +64,7 @@ backward_token_stream (token_stream_t strm, int c)
 token_t
 skip_token (token_stream_t strm, enum token_type t)
 {
-  while (strm->curr->value->type != ETKN && strm->curr->value->type == t)
+  while (strm->curr->value->type != TKN_EOF && strm->curr->value->type == t)
     strm->curr = strm->curr->next;
   return current_token (strm);
 }
@@ -205,14 +205,14 @@ create_token_stream (int (*next_char) (void *), void *file)
                 break;
               }
 
-          if ((last_tkn && (last_tkn->type == DUPIN || last_tkn->type == DUPOUT)) ||
+          if ((last_tkn && (last_tkn->type == TKN_DUPIN || last_tkn->type == TKN_DUPOUT)) ||
             c == '<' || c == '>')
             if (isnum)
-              tkn = create_token (IONUMBER, buffer, line);
+              tkn = create_token (TKN_IONUMBER, buffer, line);
             else
               error (1, 0, "%d: expecting a number\n", line);
           else
-            tkn = create_token (WORD, buffer, line);
+            tkn = create_token (TKN_WORD, buffer, line);
 
           move_backwards (c, file, 1);
         }
@@ -220,12 +220,12 @@ create_token_stream (int (*next_char) (void *), void *file)
         {
           c = (*next_char) (file);
           if (c == '&')
-            tkn = create_token (DUPIN, strdup ("<&"), line);
+            tkn = create_token (TKN_DUPIN, strdup ("<&"), line);
           else if (c == '>')
-            tkn = create_token (IODUAL, strdup ("<>"), line);
+            tkn = create_token (TKN_IODUAL, strdup ("<>"), line);
           else
             {
-              tkn = create_token (INPUT, strdup ("<"), line);
+              tkn = create_token (TKN_INPUT, strdup ("<"), line);
               move_backwards (c, file, 1);
             }
         }
@@ -233,31 +233,31 @@ create_token_stream (int (*next_char) (void *), void *file)
         {
           c = (*next_char) (file);
           if (c == '&')
-            tkn = create_token (DUPOUT, strdup (">&"), line);
+            tkn = create_token (TKN_DUPOUT, strdup (">&"), line);
           else if (c == '>')
-            tkn = create_token (APPEND, strdup (">>"), line);
+            tkn = create_token (TKN_APPEND, strdup (">>"), line);
           else if (c == '|')
-            tkn = create_token (CLOBBER, strdup (">|"), line);
+            tkn = create_token (TKN_CLOBBER, strdup (">|"), line);
           else
             {
-              tkn = create_token (OUTPUT, strdup (">"), line);
+              tkn = create_token (TKN_OUTPUT, strdup (">"), line);
               move_backwards (c, file, 1);
             }
         }
       else if (c == '(')
-        tkn = create_token (OPENPAREN, strdup ("("), line);
+        tkn = create_token (TKN_OPENPAREN, strdup ("("), line);
       else if (c == ')')
-        tkn = create_token (CLOSEPAREN, strdup (")"), line);
+        tkn = create_token (TKN_CLOSEPAREN, strdup (")"), line);
       else if (c == ';')
-        tkn = create_token (SEMICOLON, strdup (";"), line);
+        tkn = create_token (TKN_SEMICOLON, strdup (";"), line);
       else if (c == '|')
         {
           c = (*next_char) (file);
           if (c == '|')
-            tkn = create_token (OR, strdup ("||"), line);
+            tkn = create_token (TKN_OR, strdup ("||"), line);
           else
             {
-              tkn = create_token (PIPE, strdup ("|"), line);
+              tkn = create_token (TKN_PIPE, strdup ("|"), line);
               move_backwards (c, file, 1);
             }
         }
@@ -265,7 +265,7 @@ create_token_stream (int (*next_char) (void *), void *file)
         {
           c = (*next_char) (file);
           if (c == '&')
-            tkn = create_token (AND, strdup ("&&"), line);
+            tkn = create_token (TKN_AND, strdup ("&&"), line);
           else
             {
               error (1, 0, "%d: unrecognized token &\n", line);
@@ -287,7 +287,7 @@ create_token_stream (int (*next_char) (void *), void *file)
       c = (*next_char) (file);
     }
 
-  tkn = create_token (ETKN, strdup ("EOF"), line);
+  tkn = create_token (TKN_EOF, strdup ("EOF"), line);
 
   add_token (strm, tkn);
   last_tkn = tkn;

@@ -1,21 +1,21 @@
 enum token_type
 {
-  WORD,
-  IONUMBER,
-  INPUT,      // "<"
-  DUPIN,      // "<&"
-  IODUAL,     // "<>"
-  OUTPUT,     // ">"
-  DUPOUT,     // ">&"
-  APPEND,     // ">>"
-  CLOBBER,    // ">|"
-  PIPE,       // "|"
-  OPENPAREN,  // "("
-  CLOSEPAREN, // ")"
-  AND,        // "&&"
-  OR,         // "||"
-  SEMICOLON,  // ";"
-  ETKN,       // "End Token", aka EOF
+  TKN_WORD,
+  TKN_IONUMBER,
+  TKN_INPUT,      // "<"
+  TKN_DUPIN,      // "<&"
+  TKN_IODUAL,     // "<>"
+  TKN_OUTPUT,     // ">"
+  TKN_DUPOUT,     // ">&"
+  TKN_APPEND,     // ">>"
+  TKN_CLOBBER,    // ">|"
+  TKN_PIPE,       // "|"
+  TKN_OPENPAREN,  // "("
+  TKN_CLOSEPAREN, // ")"
+  TKN_AND,        // "&&"
+  TKN_OR,         // "||"
+  TKN_SEMICOLON,  // ";"
+  TKN_EOF,       // "End Token", aka EOF
 };
 
 struct token

@@ -16,18 +16,18 @@
 // used in parse_command_sequence to detect seperator patterns
 #define sep_case1(curr, next1) (not_null(curr) && \
   not_null(next1) && \
-  (curr)->type == NEWLINE && \
-  (next1)->type != NEWLINE)
+  (curr)->type == TKN_NEWLINE && \
+  (next1)->type != TKN_NEWLINE)
 #define sep_case2(curr, next1) (not_null(curr) && \
   not_null(next1) && \
-  (curr)->type == SEMICOLON && \
-  (next1)->type != NEWLINE)
+  (curr)->type == TKN_SEMICOLON && \
+  (next1)->type != TKN_NEWLINE)
 #define sep_case3(curr, next1, next2) (not_null(curr) && \
   not_null(next1) && \
   not_null(next2) && \
-  (curr)->type == SEMICOLON && \
-  (next1)->type == NEWLINE && \
-  (next2)->type != NEWLINE)
+  (curr)->type == TKN_SEMICOLON && \
+  (next1)->type == TKN_NEWLINE && \
+  (next2)->type != TKN_NEWLINE)
 
 command_t
 parse_command_sequence (token_stream_t strm);
@@ -62,20 +62,25 @@ assert_token (token_stream_t strm, enum token_type t)
       char *tw;
       switch (t)
         {
-          case WORD: tw = "WORD"; break;
-          case INPUT: tw = "INPUT"; break;
-          case OUTPUT: tw = "OUTPUT"; break;
-          case PIPE: tw = "PIPE"; break;
-          case OPENPAREN: tw = "OPENPAREN"; break;
-          case CLOSEPAREN: tw = "CLOSEPAREN"; break;
-          case AND: tw = "AND"; break;
-          case OR: tw = "OR"; break;
-          case SEMICOLON: tw = "SEMICOLON"; break;
-          case NEWLINE: tw = "NEWLINE"; break;
-          case ETKN: tw = "EOF"; break;
+          case TKN_WORD: tw = "word"; break;
+          case TKN_IONUMBER: tw = "io number"; break;
+          case TKN_INPUT: tw = "'<'"; break;
+          case TKN_DUPIN: tw = "'<&'"; break;
+          case TKN_IODUAL: tw = "'<>'"; break;
+          case TKN_OUTPUT: tw = "'>'"; break;
+          case TKN_DUPOUT: tw = "'>&'"; break;
+          case TKN_APPEND: tw = "'>>'"; break;
+          case TKN_CLOBBER: tw = "'>|'"; break;
+          case TKN_PIPE: tw = "'|'"; break;
+          case TKN_OPENPAREN: tw = "'('"; break;
+          case TKN_CLOSEPAREN: tw = "')'"; break;
+          case TKN_AND: tw = "'&&'"; break;
+          case TKN_OR: tw = "'||'"; break;
+          case TKN_SEMICOLON: tw = "';'"; break;
+          case TKN_EOF: tw = "eof"; break;
         }
 
-      error (1, 0, "%d: expecting a %s token\n", strm->line, tw);
+      error (1, 0, "%d: expecting %s token\n", current_token (strm)->line, tw);
     }
 }
 
@@ -85,7 +90,7 @@ parse_simple_command (token_stream_t strm)
   // printf("parse simple command: %s\n", current_token (strm)->value);
   int c = 0;
   int i = 0;
-  while (current_token (strm)->type == WORD)
+  while (current_token (strm)->type == TKN_WORD)
     {
       c++;
       next_token (strm);
@@ -95,7 +100,7 @@ parse_simple_command (token_stream_t strm)
   cmd->u.word = (char**) malloc ((c + 1) * sizeof (char *));
 
   backward_token_stream (strm, c);
-  while (current_token (strm)->type == WORD)
+  while (current_token (strm)->type == TKN_WORD)
     {
       cmd->u.word[i] = strdup (current_token (strm)->value);
       i++;
@@ -114,11 +119,11 @@ parse_io_redirection (token_stream_t strm, command_t cmd)
   token_t n = next_token (strm);
   char **w = NULL;
 
-  assert_token (strm, WORD);
+  assert_token (strm, TKN_WORD);
 
-  if (c->type == INPUT)
+  if (c->type == TKN_INPUT)
     w = &(cmd->input);
-  else if (c->type == OUTPUT)
+  else if (c->type == TKN_OUTPUT)
     w = &(cmd->output);
 
   // handle the case where there are more than <'s or >'s
@@ -135,15 +140,15 @@ command_t
 parse_subshell_command (token_stream_t strm)
 {
   // printf("parse subshell command: %s\n", current_token (strm)->value);
-  assert_token (strm, OPENPAREN);
+  assert_token (strm, TKN_OPENPAREN);
   next_token (strm);
-  skip_token (strm, NEWLINE);
+  skip_token (strm, TKN_NEWLINE);
 
   command_t cmd = create_command (SUBSHELL_COMMAND);
   cmd->u.subshell_command = parse_command_sequence (strm);
 
-  skip_token (strm, NEWLINE);
-  assert_token (strm, CLOSEPAREN);
+  skip_token (strm, TKN_NEWLINE);
+  assert_token (strm, TKN_CLOSEPAREN);
   next_token (strm);
 
   return cmd;
@@ -156,15 +161,15 @@ parse_command (token_stream_t strm)
   command_t cmd;
   token_t t = current_token (strm);
 
-  if (t->type == WORD)
+  if (t->type == TKN_WORD)
     cmd = parse_simple_command (strm);
-  else if (t->type == OPENPAREN)
+  else if (t->type == TKN_OPENPAREN)
     cmd = parse_subshell_command (strm);
   else
-    error (1, 0, "%d: expecting a WORD or OPENPAREN token\n", strm->line);
+    error (1, 0, "%d: expecting word or '(' token\n", t->line);
 
   t = current_token (strm);
-  while (t->type == INPUT || t->type == OUTPUT)
+  while (t->type == TKN_INPUT || t->type == TKN_OUTPUT)
     {
       cmd = parse_io_redirection (strm, cmd);
       t = current_token (strm);
@@ -185,10 +190,10 @@ parse_pipelines (token_stream_t strm)
   lft = parse_command (strm);
   t = current_token (strm);
 
-  while (t->type == PIPE)
+  while (t->type == TKN_PIPE)
     {
       next_token (strm);
-      skip_token (strm, NEWLINE);
+      skip_token (strm, TKN_NEWLINE);
 
       pipe = create_command (PIPE_COMMAND);
       rgt = parse_command (strm);
@@ -214,14 +219,14 @@ parse_logicals (token_stream_t strm)
   lft = parse_pipelines (strm);
   t = current_token (strm);
 
-  while (t->type == AND || t->type == OR)
+  while (t->type == TKN_AND || t->type == TKN_OR)
     {
       next_token (strm);
-      skip_token (strm, NEWLINE);
+      skip_token (strm, TKN_NEWLINE);
 
-      if (t->type == AND)
+      if (t->type == TKN_AND)
         lgcl = create_command (AND_COMMAND);
-      else if (t->type == OR)
+      else if (t->type == TKN_OR)
         lgcl = create_command (OR_COMMAND);
 
       rgt = parse_pipelines (strm);
@@ -258,7 +263,7 @@ parse_command_sequence (token_stream_t strm)
       else if (sep_case3 (curr, next1, next2))
         forward_token_stream (strm, 2);
 
-      if (current_token (strm)->type != ETKN)
+      if (current_token (strm)->type != TKN_EOF)
         {
           seq = create_command (SEQUENCE_COMMAND);
           rgt = parse_logicals (strm);
@@ -272,7 +277,7 @@ parse_command_sequence (token_stream_t strm)
       next2 = peek_token (strm, 2);
     }
 
-  if (not_null (curr) && curr->type == SEMICOLON)
+  if (not_null (curr) && curr->type == TKN_SEMICOLON)
     next_token (strm);
 
   return lft;
@@ -311,11 +316,11 @@ parse (token_stream_t strm)
   cmd_strm->tail = NULL;
   cmd_strm->curr = NULL;
 
-  while (current_token (strm)->type != ETKN)
+  while (current_token (strm)->type != TKN_EOF)
     {
-      skip_token (strm, NEWLINE);
+      skip_token (strm, TKN_NEWLINE);
 
-      if (current_token (strm)->type != ETKN)
+      if (current_token (strm)->type != TKN_EOF)
         {
           add_command (cmd_strm, parse_command_sequence (strm));
         }
