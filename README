@@ -9,9 +9,9 @@ DIGIT = 0|1|2|3|4|5|6|7|8|9;
 
 WORD = CHAR , { CHAR };
 
-IO_NUMBER = "&", DIGIT , { DIGIT };
+IO_NUMBER = DIGIT , { DIGIT };
 
-IO_REDIRECTION = [ IO_NUMBER ] ,  ( "<" , ( WORD | IO_NUMBER ) ) | ( "<>" , WORD ) | ( ">" , ( WORD | IO_NUMBER ) ) | ( ">>" , WORD ) | ( ">|" , WORD );
+IO_REDIRECTION = [ IO_NUMBER ] ,  ( "<" , WORD | "<&" , IO_NUMBER | "<>" , WORD | ">" , WORD | ">&" , IO_NUMBER | ">>" , WORD | ">|" , WORD );
 
 SIMPLE_COMMAND = WORD , { WORD };
 

@@ -3,8 +3,10 @@ enum token_type
   WORD,
   IONUMBER,
   INPUT,      // "<"
+  DUPIN,      // "<&"
   IODUAL,     // "<>"
   OUTPUT,     // ">"
+  DUPOUT,     // ">&"
   APPEND,     // ">>"
   CLOBBER,    // ">|"
   PIPE,       // "|"

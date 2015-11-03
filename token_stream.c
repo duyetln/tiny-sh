@@ -161,6 +161,7 @@ create_token_stream (int (*next_char) (void *), void *file)
   strm->curr = NULL;
 
   token_t tkn = NULL;
+  token_t last_tkn = NULL;
 
   while (c != EOF)
     {
@@ -182,24 +183,45 @@ create_token_stream (int (*next_char) (void *), void *file)
         }
       else if (iswordchar (c))
         {
-          // this should be more than enough, hopefully
+          char *tmp = NULL;
+          char *buffer = NULL;
           int size = 50;
           int count = 0;
-          char *buffer = NULL;
+          int isnum = 1;
           while (iswordchar (c))
             {
               bufferadd (&buffer, &size, &count, c);
               c = (*next_char) (file);
             }
 
+          tmp = buffer;
+          buffer = strndup (tmp, count);
+          free (tmp);
+          tmp = buffer;
+          while (*tmp != '\0')
+            if (!isdigit (*tmp++))
+              {
+                isnum = 0;
+                break;
+              }
+
+          if ((last_tkn && (last_tkn->type == DUPIN || last_tkn->type == DUPOUT)) ||
+            c == '<' || c == '>')
+            if (isnum)
+              tkn = create_token (IONUMBER, buffer, line);
+            else
+              error (1, 0, "%d: expecting a number\n", line);
+          else
+            tkn = create_token (WORD, buffer, line);
+
           move_backwards (c, file, 1);
-          tkn = create_token (WORD, strndup (buffer, count), line);
-          free (buffer);
         }
       else if (c == '<')
         {
           c = (*next_char) (file);
-          if (c == '>')
+          if (c == '&')
+            tkn = create_token (DUPIN, strdup ("<&"), line);
+          else if (c == '>')
             tkn = create_token (IODUAL, strdup ("<>"), line);
           else
             {
@@ -210,7 +232,9 @@ create_token_stream (int (*next_char) (void *), void *file)
       else if (c == '>')
         {
           c = (*next_char) (file);
-          if (c == '>')
+          if (c == '&')
+            tkn = create_token (DUPOUT, strdup (">&"), line);
+          else if (c == '>')
             tkn = create_token (APPEND, strdup (">>"), line);
           else if (c == '|')
             tkn = create_token (CLOBBER, strdup (">|"), line);
@@ -242,21 +266,6 @@ create_token_stream (int (*next_char) (void *), void *file)
           c = (*next_char) (file);
           if (c == '&')
             tkn = create_token (AND, strdup ("&&"), line);
-          else if (isdigit (c))
-            {
-              int size = 3;
-              int count = 0;
-              char *buffer = NULL;
-              while (isdigit (c))
-                {
-                  bufferadd (&buffer, &size, &count, c);
-                  c = (*next_char) (file);
-                }
-
-              move_backwards (c, file, 1);
-              tkn = create_token (IONUMBER, strndup (buffer, count), line);
-              free (buffer);
-            }
           else
             {
               error (1, 0, "%d: unrecognized token &\n", line);
@@ -271,6 +280,7 @@ create_token_stream (int (*next_char) (void *), void *file)
       if (tkn != NULL)
         {
           add_token (strm, tkn);
+          last_tkn = tkn;
           tkn = NULL;
         }
 
@@ -280,6 +290,7 @@ create_token_stream (int (*next_char) (void *), void *file)
   tkn = create_token (ETKN, strdup ("EOF"), line);
 
   add_token (strm, tkn);
+  last_tkn = tkn;
   tkn = NULL;
 
   return strm;
