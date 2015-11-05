@@ -26,6 +26,7 @@ create_command (enum command_type t)
   cmd->status = -1;
   cmd->io_head = NULL;
   cmd->io_tail = NULL;
+  cmd->io_count = 0;
 
   if (t == CMD_SIMPLE)
     cmd->u.word = NULL;
@@ -74,7 +75,6 @@ assert_token (token_stream_t strm, enum token_type t)
 command_t
 parse_simple_command (token_stream_t strm)
 {
-  // printf("parse simple command: %s\n", current_token (strm)->value);
   int c = 0;
   int i = 0;
   while (istkn (current_token (strm), TKN_WORD))
@@ -101,7 +101,6 @@ parse_simple_command (token_stream_t strm)
 command_t
 parse_io_redirection (token_stream_t strm, command_t cmd)
 {
-  // printf("parse io redirection: %s\n", current_token (strm)->value);
   io_node_t io;
   io = (io_node_t) malloc (sizeof (struct io_node));
   io->io_num = NULL;
@@ -162,11 +161,13 @@ parse_io_redirection (token_stream_t strm, command_t cmd)
     {
       cmd->io_head = io;
       cmd->io_tail = io;
+      cmd->io_count++;
     }
   else
     {
       cmd->io_tail->next = io;
       cmd->io_tail = io;
+      cmd->io_count++;
     }
 
   next_token (strm);
@@ -177,7 +178,6 @@ parse_io_redirection (token_stream_t strm, command_t cmd)
 command_t
 parse_subshell_command (token_stream_t strm)
 {
-  // printf("parse subshell command: %s\n", current_token (strm)->value);
   assert_token (strm, TKN_OPENPAREN);
   next_token (strm);
 
@@ -193,7 +193,6 @@ parse_subshell_command (token_stream_t strm)
 command_t
 parse_command (token_stream_t strm)
 {
-  // printf("parse command: %s\n", current_token (strm)->value);
   command_t cmd;
   token_t t = current_token (strm);
 
@@ -217,7 +216,6 @@ parse_command (token_stream_t strm)
 command_t
 parse_pipelines (token_stream_t strm)
 {
-  // printf("parse pipelines: %s\n", current_token (strm)->value);
   token_t t;
   command_t lft;
   command_t rgt;
@@ -245,7 +243,6 @@ parse_pipelines (token_stream_t strm)
 command_t
 parse_logicals (token_stream_t strm)
 {
-  // printf("parse logicals: %s\n", current_token (strm)->value);
   token_t t;
   command_t lft;
   command_t rgt;
@@ -277,7 +274,6 @@ parse_logicals (token_stream_t strm)
 command_t
 parse_command_sequence (token_stream_t strm)
 {
-  // printf("parse command sequence: %s\n", current_token (strm)->value);
   command_t lft;
   command_t rgt;
   command_t seq;
@@ -324,7 +320,6 @@ add_command (command_stream_t strm, command_t cmd)
 command_stream_t
 parse (token_stream_t strm)
 {
-  // printf("parse: %s\n", current_token (strm)->value);
   command_stream_t cmd_strm = malloc_command_stream;
   cmd_strm->head = NULL;
   cmd_strm->tail = NULL;

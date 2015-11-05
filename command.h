@@ -37,6 +37,7 @@ struct command
   // Exit status, or -1 if not known (e.g., because it has not exited yet).
   int status;
 
+  int io_count;
   struct io_node *io_head;
   struct io_node *io_tail;
 

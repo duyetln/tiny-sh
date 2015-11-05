@@ -98,12 +98,33 @@ get_reads (command_t cmd)
       case CMD_SIMPLE:
       case CMD_SUBSHELL:
         {
-          if (cmd->input)
+          if (cmd->io_head)
             {
+              int count = 0;
+              io_node_t io = cmd->io_head;
+              while (io)
+                {
+                  if (io->op == IO_INPUT || io->op == IO_IODUAL)
+                    count++;
+                  io = io->next;
+                }
+
               first = result;
-              second = malloc_pointer (char *, 2);
-              second[1] = NULL;
-              second[0] = cmd->input;
+              second = malloc_pointer (char *, count + 1);
+              second[count] = NULL;
+
+              io = cmd->io_head;
+              while (io)
+                {
+                  if (io->op == IO_INPUT || io->op == IO_IODUAL)
+                    {
+                      *second = io->word;
+                      second++;
+                    }
+                  io = io->next;
+                }
+
+              second = second - count;
               result = merge (first, second);
             }
           break;
@@ -152,12 +173,33 @@ get_writes (command_t cmd)
       case CMD_SIMPLE:
       case CMD_SUBSHELL:
         {
-          if (cmd->output)
+          if (cmd->io_head)
             {
+              int count = 0;
+              io_node_t io = cmd->io_head;
+              while (io)
+                {
+                  if (io->op == IO_OUTPUT || io->op == IO_APPEND || io->op == IO_CLOBBER)
+                    count++;
+                  io = io->next;
+                }
+
               first = result;
-              second = malloc_pointer (char *, 2);
-              second[1] = NULL;
-              second[0] = cmd->output;
+              second = malloc_pointer (char *, count + 1);
+              second[count] = NULL;
+
+              io = cmd->io_head;
+              while (io)
+                {
+                  if (io->op == IO_OUTPUT || io->op == IO_APPEND || io->op == IO_CLOBBER)
+                    {
+                      *second = io->word;
+                      second++;
+                    }
+                  io = io->next;
+                }
+
+              second = second - count;
               result = merge (first, second);
             }
           break;
