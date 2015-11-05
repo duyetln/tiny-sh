@@ -83,22 +83,22 @@ command_status (command_t c)
 }
 
 void
-execute_sequence_command (command_t cmd)
+execute_sequence_command (command_t cmd, int no_clobber)
 {
-  execute_command (cmd->u.command[0]);
-  execute_command (cmd->u.command[1]);
+  execute_command (cmd->u.command[0], no_clobber);
+  execute_command (cmd->u.command[1], no_clobber);
   cmd->status = cmd->u.command[1]->status;
 }
 
 void
-execute_and_command (command_t cmd)
+execute_and_command (command_t cmd, int no_clobber)
 {
   int i;
   command_t c = NULL;
   for (i = 0; i < 2; i++)
     {
       c = cmd->u.command[i];
-      execute_command (c);
+      execute_command (c, no_clobber);
 
       if (c->status != 0)
         break;
@@ -107,14 +107,14 @@ execute_and_command (command_t cmd)
 }
 
 void
-execute_or_command (command_t cmd)
+execute_or_command (command_t cmd, int no_clobber)
 {
   int i;
   command_t c = NULL;
   for (i = 0; i < 2; i++)
     {
       c = cmd->u.command[i];
-      execute_command (c);
+      execute_command (c, no_clobber);
 
       if (c->status == 0)
         break;
@@ -123,7 +123,7 @@ execute_or_command (command_t cmd)
 }
 
 void
-execute_pipe_command (command_t cmd)
+execute_pipe_command (command_t cmd, int no_clobber)
 {
   pid_t l_pid;
   pid_t r_pid;
@@ -137,7 +137,7 @@ execute_pipe_command (command_t cmd)
       close (pfd[0]);
       dup2 (pfd[1], STDOUT_FILENO);
       close (pfd[1]);
-      execute_command (cmd->u.command[0]);
+      execute_command (cmd->u.command[0], no_clobber);
       exit (cmd->u.command[0]->status);
     }
   else if (l_pid > 0)
@@ -148,7 +148,7 @@ execute_pipe_command (command_t cmd)
           close (pfd[1]);
           dup2 (pfd[0], STDIN_FILENO);
           close (pfd[0]);
-          execute_command (cmd->u.command[1]);
+          execute_command (cmd->u.command[1], no_clobber);
           exit (cmd->u.command[1]->status);
         }
       else if (r_pid > 0)
@@ -162,7 +162,7 @@ execute_pipe_command (command_t cmd)
     }
 }
 
-void open_io (command_t cmd)
+void open_io (command_t cmd, int no_clobber)
 {
   int fdionum;
   int fdword;
@@ -194,6 +194,8 @@ void open_io (command_t cmd)
         }
       else if (io->op == IO_OUTPUT)
         {
+          if (no_clobber && access (io->word, F_OK) != -1)
+            error (errno, errno, "overwriting existing file");
           fdionum = io_num (io, STDOUT_FILENO);
           fdword = open (io->word, write_flags, perm_flags);
         }
@@ -224,7 +226,7 @@ void open_io (command_t cmd)
 }
 
 void
-execute_simple_command (command_t cmd)
+execute_simple_command (command_t cmd, int no_clobber)
 {
   pid_t child_pid;
   int status;
@@ -232,7 +234,7 @@ execute_simple_command (command_t cmd)
   child_pid = fork ();
   if (child_pid == 0)
     {
-      open_io (cmd);
+      open_io (cmd, no_clobber);
       execvp (cmd->u.word[0], cmd->u.word);
     }
   else if (child_pid > 0)
@@ -243,7 +245,7 @@ execute_simple_command (command_t cmd)
 }
 
 void
-execute_subshell_command (command_t cmd)
+execute_subshell_command (command_t cmd, int no_clobber)
 {
   pid_t child_pid;
   int status;
@@ -251,8 +253,8 @@ execute_subshell_command (command_t cmd)
   child_pid = fork ();
   if (child_pid == 0)
     {
-      open_io (cmd);
-      execute_command (cmd->u.subshell_command);
+      open_io (cmd, no_clobber);
+      execute_command (cmd->u.subshell_command, no_clobber);
       exit (cmd->u.subshell_command->status);
     }
   else if (child_pid > 0)
@@ -263,16 +265,16 @@ execute_subshell_command (command_t cmd)
 }
 
 void
-execute_command (command_t c)
+execute_command (command_t c, int no_clobber)
 {
   switch (c->type)
     {
-      case CMD_SEQUENCE: execute_sequence_command (c); break;
-      case CMD_AND: execute_and_command (c); break;
-      case CMD_OR: execute_or_command (c); break;
-      case CMD_PIPE: execute_pipe_command (c); break;
-      case CMD_SIMPLE: execute_simple_command (c); break;
-      case CMD_SUBSHELL: execute_subshell_command (c); break;
+      case CMD_SEQUENCE: execute_sequence_command (c, no_clobber); break;
+      case CMD_AND: execute_and_command (c, no_clobber); break;
+      case CMD_OR: execute_or_command (c, no_clobber); break;
+      case CMD_PIPE: execute_pipe_command (c, no_clobber); break;
+      case CMD_SIMPLE: execute_simple_command (c, no_clobber); break;
+      case CMD_SUBSHELL: execute_subshell_command (c, no_clobber); break;
     }
 }
 

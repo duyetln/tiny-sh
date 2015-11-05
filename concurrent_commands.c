@@ -365,7 +365,7 @@ destroy_dependencies (dependency_t *deps)
 }
 
 int
-parallelize_command_stream (command_stream_t strm)
+parallelize_command_stream (command_stream_t strm, int no_clobber)
 {
   dependency_t *deps;
   dependency_t *it;
@@ -386,7 +386,7 @@ parallelize_command_stream (command_stream_t strm)
               fork_pid = fork ();
               if (fork_pid == 0)
                 {
-                  execute_command (dep->cmd);
+                  execute_command (dep->cmd, no_clobber);
                   exit (dep->cmd->status);
                 }
               else if (fork_pid > 0)

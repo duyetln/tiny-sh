@@ -15,7 +15,7 @@ static char const *script_name;
 static void
 usage (void)
 {
-  error (1, 0, "usage: %s [-pt] SCRIPT-FILE", program_name);
+  error (1, 0, "usage: %s [-ptC] SCRIPT-FILE", program_name);
 }
 
 static int
@@ -31,13 +31,15 @@ main (int argc, char **argv)
   int command_number = 1;
   int print_tree = 0;
   int time_travel = 0;
+  int no_clobber = 0;
   program_name = argv[0];
 
   for (;;)
-    switch (getopt (argc, argv, "pt"))
+    switch (getopt (argc, argv, "ptC"))
       {
       case 'p': print_tree = 1; break;
       case 't': time_travel = 1; break;
+      case 'C': no_clobber = 1; break;
       default: usage (); break;
       case -1: goto options_exhausted;
       }
@@ -59,7 +61,7 @@ main (int argc, char **argv)
   int status;
 
   if (time_travel)
-    status = parallelize_command_stream (command_stream);
+    status = parallelize_command_stream (command_stream, no_clobber);
   else
     {
       while ((command = current_command (command_stream)))
@@ -72,7 +74,7 @@ main (int argc, char **argv)
           else
             {
               last_command = command;
-              execute_command (command);
+              execute_command (command, no_clobber);
             }
 
           next_command (command_stream);

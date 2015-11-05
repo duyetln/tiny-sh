@@ -1,4 +1,4 @@
 #include "command_stream.h"
 
 int
-parallelize_command_stream (command_stream_t strm);
+parallelize_command_stream (command_stream_t strm, int no_clobber);
