@@ -28,7 +28,7 @@ a&&b||
 g<h;;
 
 # This is a weird example: nobody would ever want to run this.
-a<b>c|d<e>f|g<h>i;;
+a<b>c|d<e>f|g<h>i
 EOF
 
 cat >test.exp <<'EOF'
@@ -39,7 +39,7 @@ cat >test.exp <<'EOF'
 # 3
   : : :
 # 4
-      cat</etc/passwd \
+      cat </etc/passwd \
     |
       tr a-z A-Z \
     |
@@ -47,13 +47,13 @@ cat >test.exp <<'EOF'
   ||
     echo sort failed!
 # 5
-  a b<c>d
+  a b <c >d
 # 6
-      cat</etc/passwd \
+      cat </etc/passwd \
     |
       tr a-z A-Z \
     |
-      sort -u>out \
+      sort -u >out \
   ||
     echo sort failed!
 # 7
@@ -69,13 +69,13 @@ cat >test.exp <<'EOF'
   &&
       f \
     |
-      g<h
+      g <h
 # 8
-    a<b>c \
+    a <b >c \
   |
-    d<e>f \
+    d <e >f \
   |
-    g<h>i
+    g <h >i
 EOF
 
 ../timetrash -p test.sh >test.out 2>test.err || exit
