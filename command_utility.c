@@ -1,4 +1,3 @@
-// UCLA CS 111 Lab 1 command execution
 #include <error.h>
 #include <errno.h>
 #include <unistd.h>
@@ -172,7 +171,7 @@ void open_io (command_t cmd, int no_clobber)
   int rw_flags = O_RDWR | O_CREAT;
   int perm_flags = S_IRUSR | S_IWUSR;
   io_node_t io = cmd->io_head;
- 
+
   io = cmd->io_head;
   while (io != NULL)
     {

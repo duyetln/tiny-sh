@@ -1,5 +1,4 @@
 #! /bin/sh
-# UCLA CS 111 - Check distribution.
 
 export LC_ALL=C
 

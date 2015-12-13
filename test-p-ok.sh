@@ -1,7 +1,5 @@
 #! /bin/sh
 
-# UCLA CS 111 Lab 1 - Test that valid syntax is processed correctly.
-
 tmp=$0-$$.tmp
 mkdir "$tmp" || exit
 
