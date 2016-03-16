@@ -1,5 +1,3 @@
-# CS 111 Lab 1 Makefile
-
 CC = gcc
 CFLAGS = -g -Wall -Wextra -Wno-unused -Werror
 LAB = 1
@@ -11,7 +9,6 @@ TESTS = $(wildcard test*.sh)
 TEST_BASES = $(subst .sh,,$(TESTS))
 
 TIMETRASH_SOURCES = \
-  alloc.c \
   main.c \
   token_stream.c \
   command_stream.c \
@@ -20,13 +17,12 @@ TIMETRASH_SOURCES = \
 TIMETRASH_OBJECTS = $(subst .c,.o,$(TIMETRASH_SOURCES))
 
 DIST_SOURCES = \
-  $(TIMETRASH_SOURCES) alloc.h command.h command_utility.h token_stream.h command_stream.h concurrent_commands.h Makefile \
+  $(TIMETRASH_SOURCES) command.h command_utility.h token_stream.h command_stream.h concurrent_commands.h Makefile \
   $(TESTS) check-dist README
 
 timetrash: $(TIMETRASH_OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(TIMETRASH_OBJECTS)
 
-alloc.o: alloc.h
 execute-command.o main.o print-command.o read-command.o: command.h command_utility.h token_stream.h command_stream.h concurrent_commands.h
 execute-command.o print-command.o read-command.o: command.h command_utility.h token_stream.h command_stream.h concurrent_commands.h
 
