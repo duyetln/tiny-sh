@@ -171,7 +171,7 @@ create_token_stream (int (*next_char) (void *), void *file)
             line++;
           c = (*next_char) (file);
         }
-      
+
       if (c == EOF)
         break;
       else if (c == '#')
